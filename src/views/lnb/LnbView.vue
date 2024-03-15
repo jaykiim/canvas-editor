@@ -46,7 +46,7 @@ function onClickTab(tab: Keyof<typeof tabs.data>) {
         class="tab-item"
         @click="onClickTab(tab)"
       >
-        {{ tab }}
+        {{ tabs.data[tab].label }}
       </div>
     </div>
 
