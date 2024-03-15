@@ -2,8 +2,10 @@
 캔버스 위에 놓일 수 있는 모든 엘리먼트와 관련된 타입을 정의한다
 ============================================================================================================================== */
 
+// * 공통 ----------------------------------------------------------------------------------------------------------------
+
 // 대부분의 타입의 엘리먼트가 갖고 있는 공통 속성
-interface ObjectCommonData {
+interface ElementCommonData {
   readonly id: string; // 엘리먼트 아이디
   readonly type: string; // 엘리먼트 타입
   name: string; // 엘리먼트명
@@ -15,23 +17,30 @@ interface ObjectCommonData {
   children: Record<string, ChildrenType> | null; // 자식 엘리먼트
 };
 
+// 프로젝트 내에 속한 모든 페이지 정보를 저장하는 pinia 스토어 타입 
+interface ElementStore {
+  list: string[];  // 프로젝트 내에 속한 모든 페이지의 아이디 목록
+  detail: Record<string, PageElement>;
+}
+
 // 다른 엘리먼트의 자식 엘리먼트가 될 수 있는 엘리먼트 타입
 type ChildrenType = ShapeElement;
 
-// * 페이지 엘리먼트 ----------------------------------------------------------------------------------------------------------------
+// * 엘리먼트 타입 ----------------------------------------------------------------------------------------------------------------
 
-interface PageElement extends ObjectCommonData  {
+interface PageElement extends ElementCommonData  {
   parentId: null;
   scale: number; // 페이지의 확대/축소 수치
+  type: 'page';
 };
 
-// * 쉐입 엘리먼트 ----------------------------------------------------------------------------------------------------------------
-
-interface ShapeElement extends ObjectCommonData {
+interface ShapeElement extends ElementCommonData {
   parentId: string;
   children: Record<string, ChildrenType>;
   properties: DesignProps;
 };
+
+// * 엘리먼트 속성 카테고리 ----------------------------------------------------------------------------------------------------------------
 
 interface DesignProps {
   backgroundColor?: string;
@@ -39,4 +48,4 @@ interface DesignProps {
   lineThickness?: number;
 }
 
-export type { PageElement, ShapeElement };
+export type { ElementStore, PageElement, ShapeElement };
