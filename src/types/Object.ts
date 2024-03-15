@@ -1,33 +1,33 @@
 /* ==============================================================================================================================
-캔버스 위에 놓일 수 있는 모든 오브젝트와 관련된 타입을 정의한다
+캔버스 위에 놓일 수 있는 모든 엘리먼트와 관련된 타입을 정의한다
 ============================================================================================================================== */
 
-// 대부분의 타입의 오브젝트가 갖고 있는 공통 속성
+// 대부분의 타입의 엘리먼트가 갖고 있는 공통 속성
 interface ObjectCommonData {
-  readonly id: string; // 오브젝트 아이디
-  readonly type: string; // 오브젝트 타입
-  name: string; // 오브젝트명
-  width: number; // 오브젝트의 너비
-  height: number; // 오브젝트의 높이
-  x: number; // 오브젝트가 x축으로 패닝된 수치 (px)
-  y: number; // 오브젝트가 y축으로 패닝된 수치 (px)
-  parentId: string | null; // 부모 오브젝트의 아이디
-  children: Record<string, ChildrenType> | null; // 자식 오브젝트
+  readonly id: string; // 엘리먼트 아이디
+  readonly type: string; // 엘리먼트 타입
+  name: string; // 엘리먼트명
+  width: number; // 엘리먼트의 너비
+  height: number; // 엘리먼트의 높이
+  x: number; // 엘리먼트가 x축으로 패닝된 수치 (px)
+  y: number; // 엘리먼트가 y축으로 패닝된 수치 (px)
+  parentId: string | null; // 부모 엘리먼트의 아이디
+  children: Record<string, ChildrenType> | null; // 자식 엘리먼트
 };
 
-// 다른 오브젝트의 자식 오브젝트가 될 수 있는 오브젝트 타입
-type ChildrenType = DesignObject;
+// 다른 엘리먼트의 자식 엘리먼트가 될 수 있는 엘리먼트 타입
+type ChildrenType = ShapeElement;
 
-// * 페이지 오브젝트 ----------------------------------------------------------------------------------------------------------------
+// * 페이지 엘리먼트 ----------------------------------------------------------------------------------------------------------------
 
-interface PageObject extends ObjectCommonData  {
+interface PageElement extends ObjectCommonData  {
   parentId: null;
   scale: number; // 페이지의 확대/축소 수치
 };
 
-// * 디자인 오브젝트 ----------------------------------------------------------------------------------------------------------------
+// * 쉐입 엘리먼트 ----------------------------------------------------------------------------------------------------------------
 
-interface DesignObject extends ObjectCommonData {
+interface ShapeElement extends ObjectCommonData {
   parentId: string;
   children: Record<string, ChildrenType>;
   properties: DesignProps;
@@ -38,3 +38,5 @@ interface DesignProps {
   lineColor?: string;
   lineThickness?: number;
 }
+
+export type { PageElement, ShapeElement };
