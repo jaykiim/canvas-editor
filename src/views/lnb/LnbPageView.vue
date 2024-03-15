@@ -2,9 +2,18 @@
 import { useElementStore } from '@/stores/page';
 import { storeToRefs } from 'pinia';
 
-const { elementStore } = storeToRefs(useElementStore());
+const elementStore = useElementStore();
+const { store } = storeToRefs(elementStore);
 </script>
 
 <template>
-  <div>page</div>
+  <div class="lnb-page__header" @click="elementStore.addPage">+</div>
+  <div class="lnb-page__body">
+    <div class="page-item" v-for="id in store.list" :key="id">
+      {{ store.detail[id].name }}
+    </div>
+  </div>
 </template>
+
+<style scoped lang="scss">
+</style>
