@@ -4,6 +4,15 @@
 
 import type { Component } from "vue"
 
+// * 공통 --------------------------------------------------------------------------------------------------------------------------------------------
+
+interface ContextMenuItem {
+  id: string;
+  label?: string;
+  shortcut?: string;
+  disabled?: boolean;
+}
+
 // * LNB --------------------------------------------------------------------------------------------------------------------------------------------
 
 // 탭 정의 --LnbView.vue
@@ -19,4 +28,4 @@ interface LnbTabData {
   label: string
 }
 
-export type { LnbTabInterface };
+export type { LnbTabInterface, ContextMenuItem };
