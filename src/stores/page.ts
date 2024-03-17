@@ -1,16 +1,17 @@
-import { computed, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid';
-import type { ElementStore, PageElement } from '@/types/Element';
+import type { ElementStore, PageElement, ElementType } from '@/types/Element';
 
 export const useElementStore = defineStore('element', () => {
   const store = reactive<ElementStore<PageElement>>({
     list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '6d975107-3ffb-422f-8b2d-83a95361738d'],
     detail: {
       '1d5c2a17-ebd8-4075-8c94-8081c668fc20': {
+        default: true,
         id: '1d5c2a17-ebd8-4075-8c94-8081c668fc20',
         type: 'page',
-        name: 'test1',
+        name: 'Home',
         width: 800,
         height: 600,
         x: 0,
@@ -94,6 +95,9 @@ export const useElementStore = defineStore('element', () => {
     }
   });
 
+  const selectedPage = ref(store.list[0]); // selected from LNB
+  const selectedElement = reactive<ElementType[]>([]); // selected from Canvas
+
   function addPage() {
     const id = uuidv4();
     const page: PageElement = {
@@ -114,16 +118,21 @@ export const useElementStore = defineStore('element', () => {
   }
 
   function deletePage(id: string) {
-    store.list = store.list.filter(pageId => pageId !== id);
-    delete store.detail[id];
+    const target = store.detail[id];
+    if (target.default === true) {
+      return;
+    } else {
+      store.list = store.list.filter(pageId => pageId !== id);
+      delete store.detail[id];
+    }
   }
 
   function findPageByName(name: string) {
     const pageList = Object.values(store.detail);
     return pageList.filter(page => {
-      return page.name.toLowerCase() === name
+      return page.name.toLowerCase().includes(name.toLowerCase());
     });
   }
 
-  return { store, addPage, deletePage, findPageByName };
+  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName };
 });
