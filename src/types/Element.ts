@@ -23,12 +23,16 @@ interface ElementStore<T extends ElementCommonData> {
   detail: Record<string, T>;
 }
 
+// 모든 엘리먼트 타입
+type ElementType = PageElement | ShapeElement ;
+
 // 다른 엘리먼트의 자식 엘리먼트가 될 수 있는 엘리먼트 타입
 type ChildrenType = ShapeElement;
 
 // * 엘리먼트 타입 ----------------------------------------------------------------------------------------------------------------
 
 interface PageElement extends ElementCommonData  {
+  readonly default?: boolean;
   parentId: null;
   scale: number; // 페이지의 확대/축소 수치
   type: 'page';
@@ -48,4 +52,4 @@ interface DesignProps {
   lineThickness?: number;
 }
 
-export type { ElementStore, PageElement, ShapeElement };
+export type { ElementStore, ElementType, ChildrenType, PageElement, ShapeElement };
