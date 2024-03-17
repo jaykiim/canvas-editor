@@ -63,18 +63,22 @@ function onClickTab(tab: Keyof<typeof tabs.data>) {
   height: 100%;
   background-color: #fff;
   border-right: 1px solid #e6e6e6;
-  
 }
 .tab-container {
-  padding: 10px 15px;
   display: flex;
-  justify-content: space-between;
   border-bottom: 1px solid #e6e6e6;
+  
   .tab-item {
+    flex: 1;
+    padding: 7px 15px;
+    border-right: 1px solid #e6e6e6;
+    text-align: center;
+
     color: #ababab;
     font-weight: bold;
     font-size: 0.8rem;
     cursor: pointer;
+
     &.selected {
       color: #333;
     }
@@ -83,9 +87,13 @@ function onClickTab(tab: Keyof<typeof tabs.data>) {
       color: #333;
     }
   }
+
+  .tab-item:last-child {
+    border-right: none;
+  }
 }
 
 .tab-content {
-  padding: 10px 15px;
+  // padding: 10px 15px;
 }
 </style>
