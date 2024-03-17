@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { HomeIcon, DocumentIcon } from '@heroicons/vue/24/outline';
+import { MagnifyingGlassIcon, HomeIcon, DocumentIcon } from '@heroicons/vue/24/outline';
 import { PlusCircleIcon } from '@heroicons/vue/24/solid';
 
 import { useElementStore } from '@/stores/page';
@@ -11,12 +11,12 @@ import type { Ref } from 'vue';
 import type { PageElement } from '@/types/Element';
 
 /* =======================================================================================================================================
-컨텍스트 메뉴
+컨텍스트 메뉴: 페이지 항목
 ========================================================================================================================================== */
 
 const contextMenuRef = inject<Ref<InstanceType<typeof ContextMenu>>>('contextMenuRef');
 
-function setContextMenu(page: PageElement) {
+function setPageContextMenu(page: PageElement) {
   return [
     {
       id: 'page:rename',
@@ -50,7 +50,7 @@ function setContextMenu(page: PageElement) {
 function openPageContextMenu(e: MouseEvent, page: PageElement) {
   if (!contextMenuRef?.value) return;
   selectedPage.value = page.id;
-  contextMenuRef.value.open(setContextMenu(page), e.clientX, e.clientY, 200);
+  contextMenuRef.value.open(setPageContextMenu(page), e.clientX, e.clientY, 200);
 }
 
 // rename 기능 ------------------------------------------------------------------------------------------------------------------------------------
@@ -107,12 +107,13 @@ function onSearchPage() {
 <template>
   <div class="lnb-page__header">
     <!-- 항목 검색 -->
-    <div class="search-container">
+    <div class="search-container center">
+      <MagnifyingGlassIcon class="search-icon" />
       <input type="text" class="search-input" placeholder="Find..." v-model="srchKeyword" @input="onSearchPage">
     </div>
 
     <!-- 추가 버튼 -->
-    <PlusCircleIcon @click="elementStore.addPage" class="header-icon center"/>
+    <PlusCircleIcon v-if="!srchKeyword?.length" @click="elementStore.addPage" class="header-icon center"/>
   </div>
 
   <div class="lnb-page__body">
@@ -161,11 +162,18 @@ function onSearchPage() {
   padding: 20px 15px;
   align-items: center;
   justify-content: space-between;
+  height: 64px; 
 
   .search-container {
     padding-right: 15px;
     border-bottom: 1px solid  #e6e6e6;
-    padding: 0 5px;
+    padding: 5px;
+
+    .search-icon {
+      width: 13px;
+      height: 13px;
+      margin-right: 5px;
+    }
 
     .search-input {
       border: none;
