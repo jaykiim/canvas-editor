@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { ref, provide } from 'vue';
 import { RouterView } from 'vue-router'
+import ContextMenu from './components/ContextMenu.vue';
+
+const contextMenuRef = ref<HTMLDivElement>();
+provide('contextMenuRef', contextMenuRef);
 </script>
 
 <template>
   <RouterView />
+  <ContextMenu ref="contextMenuRef" />
 </template>
 
 <style scoped>
