@@ -23,10 +23,7 @@ function setContextMenu(page: PageElement) {
       label: '페이지명 변경',
       shortcut: '⌘R',
       disabled: page.default,
-      exec: () => {
-        newPageName.value = page.name;
-        isNameEditing.value = page.id;
-      }
+      exec: () => onStartRenamePage(page)
     },
     {
       id: 'page:clone',
@@ -56,7 +53,18 @@ function openPageContextMenu(e: MouseEvent, page: PageElement) {
 const isNameEditing = ref('');
 const newPageName = ref('');
 
-function renamePage(page: PageElement) {
+function onStartRenamePage(page: PageElement) {
+  if (page.default) return;
+  isNameEditing.value = page.id;
+  newPageName.value = page.name;
+
+  // Rename 시작 시 자동 포커스
+  setTimeout(() => {
+    const input = document.getElementById(`input-${page.id}`) as HTMLInputElement;
+    if (input) input.focus();
+  }, 0);
+}
+function onDoneRenamePage(page: PageElement) {
   if (newPageName.value?.length) {
     page.name = newPageName.value
   }
@@ -109,14 +117,15 @@ function onSearchPage() {
         </div>
 
         <!-- 페이지명 -->
-        <div class="page-label">
+        <div class="page-label" @dblclick="onStartRenamePage(store.detail[id])">
           <input 
             v-if="isNameEditing === id" 
+            :id="'input-' + id"
             autofocus 
             type="text" 
             v-model="newPageName" 
-            @blur="renamePage(store.detail[id])"
-            @change="renamePage(store.detail[id])"
+            @blur="onDoneRenamePage(store.detail[id])"
+            @keydown.enter="onDoneRenamePage(store.detail[id])"
           />
           <div v-else>
             {{ store.detail[id].name }}
@@ -177,6 +186,10 @@ function onSearchPage() {
     width: 14px;
     height: 14px;
     margin-right: 14px;
+  }
+
+  .page-label {
+    width: 100%;
   }
 }
 
