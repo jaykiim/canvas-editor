@@ -8,33 +8,65 @@ import { useElementStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
 import type { Ref } from 'vue';
-import type { ContextMenuItem } from '@/types/Editor';
 import type { PageElement } from '@/types/Element';
 
+/* =======================================================================================================================================
+컨텍스트 메뉴
+========================================================================================================================================== */
+
 const contextMenuRef = inject<Ref<InstanceType<typeof ContextMenu>>>('contextMenuRef');
-const lnbPageContextMenu: ContextMenuItem[] = [
-  {
-    id: 'page:rename',
-    label: '페이지명 변경',
-    shortcut: '⌘R',
-  },
-  {
-    id: 'page:clone',
-    label: '페이지 복제',
-    shortcut: '⇧⌘C'
-  },
-  {
-    id: 'page:delete',
-    label: '페이지 삭제'
-  },
-  {
-    id: '-'
-  },
-  {
-    id: 'page:set-home',
-    label: '홈페이지로 변경'
+
+function setContextMenu(page: PageElement) {
+  return [
+    {
+      id: 'page:rename',
+      label: '페이지명 변경',
+      shortcut: '⌘R',
+      disabled: page.default,
+      exec: () => {
+        newPageName.value = page.name;
+        isNameEditing.value = page.id;
+      }
+    },
+    {
+      id: 'page:clone',
+      label: '페이지 복제',
+      shortcut: '⇧⌘C',
+    },
+    {
+      id: 'page:delete',
+      label: '페이지 삭제'
+    },
+    {
+      id: '-'
+    },
+    {
+      id: 'page:set-home',
+      label: '홈페이지로 변경',
+      disabled: page.default
+    }
+  ];
+}
+
+function openPageContextMenu(e: MouseEvent, page: PageElement) {
+  if (!contextMenuRef?.value) return;
+  contextMenuRef.value.open(setContextMenu(page), e.clientX, e.clientY, 200);
+}
+
+const isNameEditing = ref('');
+const newPageName = ref('');
+
+function renamePage(page: PageElement) {
+  if (newPageName.value?.length) {
+    page.name = newPageName.value
   }
-];
+  newPageName.value = '';
+  isNameEditing.value = '';
+}
+
+/* =======================================================================================================================================
+검색
+========================================================================================================================================== */
 
 const elementStore = useElementStore();
 const { store, selectedPage } = storeToRefs(elementStore);
@@ -45,17 +77,6 @@ const filteredList = ref<string[]>(store.value.list);
 function onSearchPage() {
   const filteredPages = elementStore.findPageByName(srchKeyword.value);
   filteredList.value = filteredPages.map(p => p.id);
-}
-
-function openPageContextMenu(e: MouseEvent, page: PageElement) {
-  if (!contextMenuRef?.value) return;
-  if (page.default) {
-    const renameItem = lnbPageContextMenu.find(menu => menu.id === 'page:rename');
-    if (renameItem) {
-      renameItem.disabled = true;
-    }
-  }
-  contextMenuRef.value.open(lnbPageContextMenu, e.clientX, e.clientY, 200);
 }
 </script>
 
@@ -89,7 +110,17 @@ function openPageContextMenu(e: MouseEvent, page: PageElement) {
 
         <!-- 페이지명 -->
         <div class="page-label">
-          {{ store.detail[id].name }}
+          <input 
+            v-if="isNameEditing === id" 
+            autofocus 
+            type="text" 
+            v-model="newPageName" 
+            @blur="renamePage(store.detail[id])"
+            @change="renamePage(store.detail[id])"
+          />
+          <div v-else>
+            {{ store.detail[id].name }}
+          </div>
         </div>
       </div>
     </template>
@@ -110,12 +141,10 @@ function openPageContextMenu(e: MouseEvent, page: PageElement) {
     padding-right: 15px;
     border-bottom: 1px solid  #e6e6e6;
     padding: 0 5px;
-    // border-radius: 5px;
 
     .search-input {
       border: none;
       outline: none;
-      //background-color:  #f3f0f0;
     }
   }
 
