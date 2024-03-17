@@ -32,7 +32,7 @@ defineExpose({ open });
       <div v-for="menu in menuItems" :key="menu.id">
         <div v-if="menu.id === '-'" class="line"></div>
 
-        <div v-else class="item" :class="menu.disabled && 'disabled'" @mousedown.stop="onClickMenu(menu)">  
+        <div v-else class="item" :class="menu.disabled && 'disabled'" @mousedown.stop="!menu.disabled && onClickMenu(menu)">  
           <div>{{ menu.label }}</div>
           <div>{{ menu.shortcut }}</div>
         </div>

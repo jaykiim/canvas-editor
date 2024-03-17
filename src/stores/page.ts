@@ -119,7 +119,7 @@ export const useElementStore = defineStore('element', () => {
 
   function deletePage(id: string) {
     const target = store.detail[id];
-    if (target.default === true) {
+    if (target?.default === true) {
       return;
     } else {
       store.list = store.list.filter(pageId => pageId !== id);

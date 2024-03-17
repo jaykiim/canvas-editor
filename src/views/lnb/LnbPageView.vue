@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { HomeIcon, DocumentIcon } from '@heroicons/vue/24/outline';
 import { PlusCircleIcon } from '@heroicons/vue/24/solid';
@@ -32,7 +32,9 @@ function setContextMenu(page: PageElement) {
     },
     {
       id: 'page:delete',
-      label: '페이지 삭제'
+      label: '페이지 삭제',
+      disabled: page.default,
+      exec: () => onDeletePage(page)
     },
     {
       id: '-'
@@ -47,8 +49,11 @@ function setContextMenu(page: PageElement) {
 
 function openPageContextMenu(e: MouseEvent, page: PageElement) {
   if (!contextMenuRef?.value) return;
+  selectedPage.value = page.id;
   contextMenuRef.value.open(setContextMenu(page), e.clientX, e.clientY, 200);
 }
+
+// rename 기능 ------------------------------------------------------------------------------------------------------------------------------------
 
 const isNameEditing = ref('');
 const newPageName = ref('');
@@ -64,12 +69,19 @@ function onStartRenamePage(page: PageElement) {
     if (input) input.focus();
   }, 0);
 }
+
 function onDoneRenamePage(page: PageElement) {
-  if (newPageName.value?.length) {
+  if (newPageName.value?.trim()?.length) {
     page.name = newPageName.value
   }
   newPageName.value = '';
   isNameEditing.value = '';
+}
+
+// 삭제 기능 ------------------------------------------------------------------------------------------------------------------------------------
+
+function onDeletePage(page: PageElement) {
+  elementStore.deletePage(page.id);
 }
 
 /* =======================================================================================================================================
@@ -80,11 +92,15 @@ const elementStore = useElementStore();
 const { store, selectedPage } = storeToRefs(elementStore);
 
 const srchKeyword = ref('');
-const filteredList = ref<string[]>(store.value.list);
+const searchResult = ref<string[]>(store.value.list);
+const filteredList = computed(() => {
+  if (srchKeyword.value?.length) return searchResult.value;
+  else return store.value.list;
+})
 
 function onSearchPage() {
   const filteredPages = elementStore.findPageByName(srchKeyword.value);
-  filteredList.value = filteredPages.map(p => p.id);
+  searchResult.value = filteredPages.map(p => p.id);
 }
 </script>
 
