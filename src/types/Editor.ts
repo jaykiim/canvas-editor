@@ -11,6 +11,7 @@ interface ContextMenuItem {
   label?: string;
   shortcut?: string;
   disabled?: boolean;
+  exec?: (param?: any) => void;
 }
 
 // * LNB --------------------------------------------------------------------------------------------------------------------------------------------

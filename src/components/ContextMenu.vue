@@ -16,16 +16,23 @@ function open(menu: ContextMenuItem[], x: number, y: number, w: number) {
   width.value = w;
 }
 
+function onClickMenu(menu: ContextMenuItem) {
+  if (menu.exec) {
+    menu.exec();
+  }
+  visible.value = false;
+}
+
 defineExpose({ open });
 </script>
 
 <template>
-  <div v-if="visible" class="context-menu__cradle" @mousedown="visible = false">
+  <div v-if="visible" class="context-menu__cradle" @mousedown.stop="visible = false">
     <div class="context-menu" :style="{ left: clientX + 'px', top: clientY + 'px', width: width + 'px' }">
       <div v-for="menu in menuItems" :key="menu.id">
         <div v-if="menu.id === '-'" class="line"></div>
 
-        <div v-else class="item" :class="menu.disabled && 'disabled'">  
+        <div v-else class="item" :class="menu.disabled && 'disabled'" @mousedown.stop="onClickMenu(menu)">  
           <div>{{ menu.label }}</div>
           <div>{{ menu.shortcut }}</div>
         </div>
