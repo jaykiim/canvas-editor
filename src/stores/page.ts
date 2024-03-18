@@ -122,8 +122,13 @@ export const useElementStore = defineStore('element', () => {
     if (target?.default === true) {
       return;
     } else {
+      // 타겟 삭제
       store.list = store.list.filter(pageId => pageId !== id);
       delete store.detail[id];
+
+      // 타겟 -1번째 페이지 선택 
+      const targetIdx = store.list.findIndex((id_) => id_ === id);
+      selectedPage.value = store.list[targetIdx - 1];
     }
   }
 
@@ -143,6 +148,8 @@ export const useElementStore = defineStore('element', () => {
     store.list.push(newId); // 새 아이디를 페이지 리스트에 추가 
     store.detail[newId] = newVal; // 새 객체 등록
     deepChangeUuid(newId, store); // 새 객체의 모든 자손의 uuid 교체
+
+    selectedPage.value = newId;
   }
 
   // 중첩된 모든 자손 엘리먼트의 uuid를 새로 교체하는 함수
