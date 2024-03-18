@@ -29,13 +29,13 @@ function setPageContextMenu(page: PageElement) {
       id: 'page:clone',
       label: '페이지 복제',
       shortcut: '⇧⌘C',
-      exec: () => onClonePage(page)
+      exec: () => elementStore.clonePage(page.id)
     },
     {
       id: 'page:delete',
       label: '페이지 삭제',
       disabled: page.default,
-      exec: () => onDeletePage(page)
+      exec: () => elementStore.deletePage(page.id)
     },
     {
       id: '-'
@@ -43,7 +43,8 @@ function setPageContextMenu(page: PageElement) {
     {
       id: 'page:set-home',
       label: '홈페이지로 변경',
-      disabled: page.default
+      disabled: page.default,
+      exec: () => elementStore.setPageAsHome(page.id)
     }
   ];
 }
@@ -77,18 +78,6 @@ function onDoneRenamePage(page: PageElement) {
   }
   newPageName.value = '';
   isNameEditing.value = '';
-}
-
-// 삭제 기능 ------------------------------------------------------------------------------------------------------------------------------------
-
-function onDeletePage(page: PageElement) {
-  elementStore.deletePage(page.id);
-}
-
-// 복제 기능 ------------------------------------------------------------------------------------------------------------------------------------
-
-function onClonePage(page: PageElement) {
-  elementStore.clonePage(page.id);
 }
 
 /* =======================================================================================================================================

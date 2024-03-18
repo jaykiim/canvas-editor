@@ -152,6 +152,27 @@ export const useElementStore = defineStore('element', () => {
     selectedPage.value = newId;
   }
 
+  function setPageAsHome(id: string) {
+    // 기존 홈페이지명 변경 
+    const prevHome = Object.values(store.detail).find(page => page.default === true);
+    if (prevHome) {
+      prevHome.default = false;
+      prevHome.name = 'old-home';
+    }
+    
+    // 새 홈페이지명 변경
+    const newHome = store.detail[id];
+    if (newHome) {
+      newHome.default = true;
+      newHome.name = 'Home';
+    }
+
+    // 순서 변경
+    const reorderedList = store.list.filter(id_ => id_ !== id);
+    reorderedList.unshift(id);
+    store.list = reorderedList;
+  }
+
   // 중첩된 모든 자손 엘리먼트의 uuid를 새로 교체하는 함수
   function deepChangeUuid(id: string, container: ElementStore<ElementType>) {
     const original = container.detail[id];
@@ -170,5 +191,5 @@ export const useElementStore = defineStore('element', () => {
     newChildren.list.forEach(id_ => deepChangeUuid(id_, newChildren));
   }
 
-  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName, clonePage };
+  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName, clonePage, setPageAsHome };
 });

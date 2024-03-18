@@ -32,7 +32,7 @@ type ChildrenType = ShapeElement;
 // * 엘리먼트 타입 ----------------------------------------------------------------------------------------------------------------
 
 interface PageElement extends ElementCommonData  {
-  readonly default?: boolean;
+  default?: boolean;
   parentId: null;
   scale: number; // 페이지의 확대/축소 수치
   type: 'page';
