@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid';
-import type { ElementStore, PageElement, ElementType } from '@/types/Element';
+import type { ElementStore, PageElement, ElementType, ChildrenType } from '@/types/Element';
 
 export const useElementStore = defineStore('element', () => {
   const store = reactive<ElementStore<PageElement>>({
@@ -134,5 +134,34 @@ export const useElementStore = defineStore('element', () => {
     });
   }
 
-  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName };
+  function clonePage(topNodeId: string) {
+    const topNode = store.detail[topNodeId]; // 복제할 원본 페이지
+    const newId = uuidv4(); // 새 아이디 
+    const newVal: PageElement = JSON.parse(JSON.stringify(topNode)); // 연결성을 끊은 새 객체
+
+    newVal.id = newId; // 새 객체의 id값 교체
+    store.list.push(newId); // 새 아이디를 페이지 리스트에 추가 
+    store.detail[newId] = newVal; // 새 객체 등록
+    deepChangeUuid(newId, store); // 새 객체의 모든 자손의 uuid 교체
+  }
+
+  // 중첩된 모든 자손 엘리먼트의 uuid를 새로 교체하는 함수
+  function deepChangeUuid(id: string, container: ElementStore<ElementType>) {
+    const original = container.detail[id];
+    const newChildren: ElementStore<ChildrenType> = { list: [], detail: {} };
+    if (original.children?.list?.length) {
+      Object.values(original.children.detail).forEach(child => {
+        const newId = uuidv4();
+        const newVal = JSON.parse(JSON.stringify(child));
+        newVal.id = newId;
+        newVal.parentId = original.id;
+        newChildren.list.push(newId);
+        newChildren.detail[newId] = newVal;
+      });
+    }
+    original.children = newChildren;
+    newChildren.list.forEach(id_ => deepChangeUuid(id_, newChildren));
+  }
+
+  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName, clonePage };
 });

@@ -6,7 +6,7 @@
 
 // 대부분의 타입의 엘리먼트가 갖고 있는 공통 속성
 interface ElementCommonData {
-  readonly id: string; // 엘리먼트 아이디
+  id: string; // 엘리먼트 아이디
   readonly type: string; // 엘리먼트 타입
   name: string; // 엘리먼트명
   width: number; // 엘리먼트의 너비

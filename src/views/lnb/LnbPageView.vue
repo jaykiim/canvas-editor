@@ -29,6 +29,7 @@ function setPageContextMenu(page: PageElement) {
       id: 'page:clone',
       label: '페이지 복제',
       shortcut: '⇧⌘C',
+      exec: () => onClonePage(page)
     },
     {
       id: 'page:delete',
@@ -50,7 +51,7 @@ function setPageContextMenu(page: PageElement) {
 function openPageContextMenu(e: MouseEvent, page: PageElement) {
   if (!contextMenuRef?.value) return;
   selectedPage.value = page.id;
-  contextMenuRef.value.open(setPageContextMenu(page), e.clientX, e.clientY, 200);
+  contextMenuRef.value.open(setPageContextMenu(page), e.clientX, e.clientY, 170);
 }
 
 // rename 기능 ------------------------------------------------------------------------------------------------------------------------------------
@@ -82,6 +83,12 @@ function onDoneRenamePage(page: PageElement) {
 
 function onDeletePage(page: PageElement) {
   elementStore.deletePage(page.id);
+}
+
+// 복제 기능 ------------------------------------------------------------------------------------------------------------------------------------
+
+function onClonePage(page: PageElement) {
+  elementStore.clonePage(page.id);
 }
 
 /* =======================================================================================================================================
