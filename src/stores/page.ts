@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid';
 import type { ElementStore, PageElement, ElementTypes } from '@/types/Element';
 
-export const useElementStore = defineStore('element', () => {
+export const usePageStore = defineStore('page', () => {
   const store = reactive<ElementStore<PageElement>>({
     list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '6d975107-3ffb-422f-8b2d-83a95361738d'],
     detail: {

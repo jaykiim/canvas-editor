@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { MagnifyingGlassIcon, HomeIcon, DocumentIcon } from '@heroicons/vue/24/outline';
 import { PlusCircleIcon } from '@heroicons/vue/24/solid';
 
-import { useElementStore } from '@/stores/page';
+import { usePageStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
 import type { Ref } from 'vue';
@@ -84,7 +84,7 @@ function onDoneRenamePage(page: PageElement) {
 검색
 ========================================================================================================================================== */
 
-const elementStore = useElementStore();
+const elementStore = usePageStore();
 const { store, selectedPage } = storeToRefs(elementStore);
 
 const srchKeyword = ref('');
