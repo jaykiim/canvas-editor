@@ -1,14 +1,14 @@
 import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid';
-import type { ElementStore, PageElement, ElementType, ChildrenType } from '@/types/Element';
+import type { ElementStore, PageElement, ElementTypes } from '@/types/Element';
 
 export const useElementStore = defineStore('element', () => {
   const store = reactive<ElementStore<PageElement>>({
     list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '6d975107-3ffb-422f-8b2d-83a95361738d'],
     detail: {
       '1d5c2a17-ebd8-4075-8c94-8081c668fc20': {
-        default: true,
+        isHome: true,
         id: '1d5c2a17-ebd8-4075-8c94-8081c668fc20',
         type: 'page',
         name: 'Home',
@@ -17,7 +17,7 @@ export const useElementStore = defineStore('element', () => {
         x: 0,
         y: 0,
         scale: 1,
-        parentId: null,
+        parentId: '',
         children: {
           list: ['416ce213-d8ac-4b71-9269-48b80729d028', 'e7a7666e-49a7-4212-9941-4398a7c16a2c'],
           detail: {
@@ -68,7 +68,7 @@ export const useElementStore = defineStore('element', () => {
         x: 50,
         y: 120,
         scale: 1.5,
-        parentId: null,
+        parentId: '',
         children: {
           list: ['53be25bf-eb5c-4e36-9364-c0271b921a4b'],
           detail: {
@@ -96,13 +96,13 @@ export const useElementStore = defineStore('element', () => {
   });
 
   const selectedPage = ref(store.list[0]); // selected from LNB
-  const selectedElement = reactive<ElementType[]>([]); // selected from Canvas
+  const selectedElement = reactive<ElementTypes[]>([]); // selected from Canvas
 
   function addPage() {
     const id = uuidv4();
     const page: PageElement = {
       id: id,
-      parentId: null,
+      parentId: '',
       type: 'page',
       name: 'page',
       width: 1980,
@@ -119,7 +119,7 @@ export const useElementStore = defineStore('element', () => {
 
   function deletePage(id: string) {
     const target = store.detail[id];
-    if (target?.default === true) {
+    if (target?.isHome === true) {
       return;
     } else {
       // 타겟 삭제
@@ -154,16 +154,16 @@ export const useElementStore = defineStore('element', () => {
 
   function setPageAsHome(id: string) {
     // 기존 홈페이지명 변경 
-    const prevHome = Object.values(store.detail).find(page => page.default === true);
+    const prevHome = Object.values(store.detail).find(page => page.isHome === true);
     if (prevHome) {
-      prevHome.default = false;
+      prevHome.isHome = false;
       prevHome.name = 'old-home';
     }
     
     // 새 홈페이지명 변경
     const newHome = store.detail[id];
     if (newHome) {
-      newHome.default = true;
+      newHome.isHome = true;
       newHome.name = 'Home';
     }
 
@@ -174,9 +174,9 @@ export const useElementStore = defineStore('element', () => {
   }
 
   // 중첩된 모든 자손 엘리먼트의 uuid를 새로 교체하는 함수
-  function deepChangeUuid(id: string, container: ElementStore<ElementType>) {
+  function deepChangeUuid(id: string, container: ElementStore<ElementTypes>) {
     const original = container.detail[id];
-    const newChildren: ElementStore<ChildrenType> = { list: [], detail: {} };
+    const newChildren: ElementStore<ElementTypes> = { list: [], detail: {} };
     if (original.children?.list?.length) {
       Object.values(original.children.detail).forEach(child => {
         const newId = uuidv4();

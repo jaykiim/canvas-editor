@@ -22,7 +22,7 @@ function setPageContextMenu(page: PageElement) {
       id: 'page:rename',
       label: '페이지명 변경',
       shortcut: '⌘R',
-      disabled: page.default,
+      disabled: page.isHome,
       exec: () => onStartRenamePage(page)
     },
     {
@@ -34,7 +34,7 @@ function setPageContextMenu(page: PageElement) {
     {
       id: 'page:delete',
       label: '페이지 삭제',
-      disabled: page.default,
+      disabled: page.isHome,
       exec: () => elementStore.deletePage(page.id)
     },
     {
@@ -43,7 +43,7 @@ function setPageContextMenu(page: PageElement) {
     {
       id: 'page:set-home',
       label: '홈페이지로 변경',
-      disabled: page.default,
+      disabled: page.isHome,
       exec: () => elementStore.setPageAsHome(page.id)
     }
   ];
@@ -61,7 +61,7 @@ const isNameEditing = ref('');
 const newPageName = ref('');
 
 function onStartRenamePage(page: PageElement) {
-  if (page.default) return;
+  if (page.isHome) return;
   isNameEditing.value = page.id;
   newPageName.value = page.name;
 
@@ -125,7 +125,7 @@ function onSearchPage() {
       >
         <!-- 아이콘 -->
         <div class="page-icon center">
-          <HomeIcon v-if="store.detail[id].default" />
+          <HomeIcon v-if="store.detail[id].isHome" />
           <DocumentIcon v-else />
         </div>
 
