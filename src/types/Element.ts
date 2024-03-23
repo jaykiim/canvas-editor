@@ -12,7 +12,7 @@ interface ElementCommonProps {
   id: string; // 엘리먼트 아이디
   type: string; // 엘리먼트 타입
   name: string; // 엘리먼트명
-  parentId?: string;
+  parentId: string;
 };
 
 interface ElementStore<T extends ElementTypes> {
@@ -29,14 +29,14 @@ interface DirectoryElementProps extends ElementCommonProps {
 
 interface FolderElement extends DirectoryElementProps {
   type: 'folder';
-  children: ElementStore<PageElement>;
+  children: ElementStore<DirectoryTypes>;
 }
 
 interface PageElement extends DirectoryElementProps, GraphicElementProps  {
   type: 'page';
   isHome?: boolean;
   scale: number; // 페이지의 확대/축소 수치
-  children: ElementStore<ElementTypes>;
+  children: ElementStore<ElementTypes>; // 폴더, 그래픽 요소, 페이지 모두 페이지의 자식이 될 수 있다
 };
 
 // * 그래픽 요소 ----------------------------------------------------------------------------------------------------------------
@@ -64,4 +64,4 @@ interface DesignProps {
   lineThickness?: number;
 }
 
-export type { ElementStore, ElementTypes, FolderElement, PageElement, ShapeElement };
+export type { ElementStore, ElementTypes, DirectoryTypes, FolderElement, PageElement, ShapeElement, GraphicTypes};

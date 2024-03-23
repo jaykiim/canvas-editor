@@ -1,20 +1,76 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { MagnifyingGlassIcon, HomeIcon, DocumentIcon } from '@heroicons/vue/24/outline';
+import { v4 as uuidv4 } from 'uuid';
+import { MagnifyingGlassIcon, HomeIcon, DocumentIcon, FolderIcon } from '@heroicons/vue/24/outline';
 import { PlusCircleIcon } from '@heroicons/vue/24/solid';
 
 import { usePageStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
 import type { Ref } from 'vue';
-import type { PageElement } from '@/types/Element';
+import type { DirectoryTypes, FolderElement, PageElement } from '@/types/Element';
 
 /* =======================================================================================================================================
-컨텍스트 메뉴: 페이지 항목
+컨텍스트 메뉴
 ========================================================================================================================================== */
 
 const contextMenuRef = inject<Ref<InstanceType<typeof ContextMenu>>>('contextMenuRef');
+
+function openContextMenu(e: MouseEvent, item?: DirectoryTypes) {
+  if (!contextMenuRef?.value) return;
+
+  if (item) {
+    if (item.type === 'page') {
+      selectedPage.value = item.id;
+      contextMenuRef.value.open(setPageContextMenu(item as PageElement), e.clientX, e.clientY, 170);
+    } else {
+      contextMenuRef.value.open(setFolderContextMenu(item as FolderElement), e.clientX, e.clientY, 170);
+    }
+  }
+
+  // 디렉토리 추가
+  else {
+    contextMenuRef.value.open(setAddContextMenu(), e.clientX, e.clientY, 120);
+  }
+}
+
+function setAddContextMenu() {
+  return [
+    {
+      id: 'add:folder',
+      label: '새 폴더',
+      exec: () => addDirectory('folder')
+    },
+    {
+      id: 'add:page',
+      label: '새 페이지',
+      exec: () => addDirectory('page')
+    }
+  ]
+}
+
+function setFolderContextMenu(folder: FolderElement) {
+  return [
+    {
+      id: 'folder:rename',
+      label: '폴더명 변경',
+      shortcut: '⌘R',
+      exec: () => onStartRename(folder)
+    },
+    {
+      id: 'folder:clone',
+      label: '폴더 복제',
+      shortcut: '⇧⌘C',
+      exec: () => elementStore.cloneElement(folder, store.value)
+    },
+    {
+      id: 'folder:delete',
+      label: '폴더 삭제',
+      exec: () => elementStore.deleteElement(folder.id, store.value)
+    }
+  ]
+}
 
 function setPageContextMenu(page: PageElement) {
   return [
@@ -23,19 +79,19 @@ function setPageContextMenu(page: PageElement) {
       label: '페이지명 변경',
       shortcut: '⌘R',
       disabled: page.isHome,
-      exec: () => onStartRenamePage(page)
+      exec: () => onStartRename(page)
     },
     {
       id: 'page:clone',
       label: '페이지 복제',
       shortcut: '⇧⌘C',
-      exec: () => elementStore.clonePage(page.id)
+      exec: () => elementStore.cloneElement(page, store.value)
     },
     {
       id: 'page:delete',
       label: '페이지 삭제',
       disabled: page.isHome,
-      exec: () => elementStore.deletePage(page.id)
+      exec: () => elementStore.deleteElement(page.id, store.value)
     },
     {
       id: '-'
@@ -49,34 +105,61 @@ function setPageContextMenu(page: PageElement) {
   ];
 }
 
-function openPageContextMenu(e: MouseEvent, page: PageElement) {
-  if (!contextMenuRef?.value) return;
-  selectedPage.value = page.id;
-  contextMenuRef.value.open(setPageContextMenu(page), e.clientX, e.clientY, 170);
+function addDirectory(type: 'folder' | 'page') {
+  const id = uuidv4();
+  store.value.list.push(id);
+
+  if (type === 'folder') {
+    const newFolder: FolderElement = {
+      id: id,
+      parentId: '',
+      type: 'folder',
+      name: 'folder',
+      children: { list: [], detail: {} }
+    };
+    store.value.detail[id] = newFolder;
+  } else {
+    const newPage: PageElement = {
+      id: id,
+      parentId: '',
+      type: 'page',
+      name: 'page',
+      children: { list: [], detail: {} },
+      scale: 1,
+      x: 0,
+      y: 0,
+      width: 1920,
+      height: 1080
+    }
+    store.value.detail[id] = newPage;
+  }
 }
 
 // rename 기능 ------------------------------------------------------------------------------------------------------------------------------------
 
 const isNameEditing = ref('');
-const newPageName = ref('');
+const newDirectoryName = ref('');
 
-function onStartRenamePage(page: PageElement) {
-  if (page.isHome) return;
-  isNameEditing.value = page.id;
-  newPageName.value = page.name;
+function onStartRename(directory: DirectoryTypes) {
+  if (directory.type === 'page') {
+    if ((directory as PageElement).isHome) return;
+  }
+
+  isNameEditing.value = directory.id;
+  newDirectoryName.value = directory.name;
 
   // Rename 시작 시 자동 포커스
   setTimeout(() => {
-    const input = document.getElementById(`input-${page.id}`) as HTMLInputElement;
+    const input = document.getElementById(`input-${directory.id}`) as HTMLInputElement;
     if (input) input.focus();
   }, 0);
 }
 
-function onDoneRenamePage(page: PageElement) {
-  if (newPageName.value?.trim()?.length) {
-    page.name = newPageName.value
+function onDoneRename(directory: DirectoryTypes) {
+  if (newDirectoryName.value?.trim()?.length) {
+    directory.name = newDirectoryName.value
   }
-  newPageName.value = '';
+  newDirectoryName.value = '';
   isNameEditing.value = '';
 }
 
@@ -95,8 +178,8 @@ const filteredList = computed(() => {
 })
 
 function onSearchPage() {
-  const filteredPages = elementStore.findPageByName(srchKeyword.value);
-  searchResult.value = filteredPages.map(p => p.id);
+  const result = elementStore.findElementByName(srchKeyword.value, store.value);
+  searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder').map(p => p.id);
 }
 </script>
 
@@ -109,7 +192,7 @@ function onSearchPage() {
     </div>
 
     <!-- 추가 버튼 -->
-    <PlusCircleIcon v-if="!srchKeyword?.length" @click="elementStore.addPage" class="header-icon center"/>
+    <PlusCircleIcon v-if="!srchKeyword?.length" @click="openContextMenu" class="header-icon center"/>
   </div>
 
   <div class="lnb-page__body">
@@ -121,24 +204,28 @@ function onSearchPage() {
         :class="id === selectedPage && 'selected'" 
         :key="id"
         @click="selectedPage = id"
-        @contextmenu.prevent="openPageContextMenu($event, store.detail[id])"
+        @contextmenu.prevent="openContextMenu($event, store.detail[id])"
       >
         <!-- 아이콘 -->
         <div class="page-icon center">
-          <HomeIcon v-if="store.detail[id].isHome" />
-          <DocumentIcon v-else />
+          <!-- 페이지 -->
+          <template v-if="store.detail[id].type === 'page'">
+            <HomeIcon v-if="(store.detail[id] as PageElement).isHome" />
+            <DocumentIcon v-else />
+          </template>
+          <FolderIcon v-else/>
         </div>
 
         <!-- 페이지명 -->
-        <div class="page-label" @dblclick="onStartRenamePage(store.detail[id])">
+        <div class="page-label" @dblclick="onStartRename(store.detail[id])">
           <input 
             v-if="isNameEditing === id" 
             :id="'input-' + id"
             autofocus 
             type="text" 
-            v-model="newPageName" 
-            @blur="onDoneRenamePage(store.detail[id])"
-            @keydown.enter="onDoneRenamePage(store.detail[id])"
+            v-model="newDirectoryName" 
+            @blur="onDoneRename(store.detail[id])"
+            @keydown.enter="onDoneRename(store.detail[id])"
           />
           <div v-else>
             {{ store.detail[id].name }}

@@ -1,10 +1,10 @@
 import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid';
-import type { ElementStore, PageElement, ElementTypes } from '@/types/Element';
+import type { ElementStore, PageElement, ElementTypes, DirectoryTypes } from '@/types/Element';
 
 export const usePageStore = defineStore('page', () => {
-  const store = reactive<ElementStore<PageElement>>({
+  const store = reactive<ElementStore<DirectoryTypes>>({
     list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '6d975107-3ffb-422f-8b2d-83a95361738d'],
     detail: {
       '1d5c2a17-ebd8-4075-8c94-8081c668fc20': {
@@ -95,86 +95,45 @@ export const usePageStore = defineStore('page', () => {
     }
   });
 
-  const selectedPage = ref(store.list[0]); // selected from LNB
-  const selectedElement = reactive<ElementTypes[]>([]); // selected from Canvas
+  /* ====================================================================================================================================================================================
+  공통
+  ==================================================================================================================================================================================== */
 
-  function addPage() {
-    const id = uuidv4();
-    const page: PageElement = {
-      id: id,
-      parentId: '',
-      type: 'page',
-      name: 'page',
-      width: 1980,
-      height: 1020,
-      x: 0,
-      y: 0,
-      scale: 1,
-      children: { list: [], detail: {} }
-    };
-
-    store.list.push(id);
-    store.detail[id] = page;
-  }
-
-  function deletePage(id: string) {
-    const target = store.detail[id];
-    if (target?.isHome === true) {
-      return;
-    } else {
-      // 타겟 삭제
-      store.list = store.list.filter(pageId => pageId !== id);
-      delete store.detail[id];
-
-      // 타겟 -1번째 페이지 선택 
-      const targetIdx = store.list.findIndex((id_) => id_ === id);
-      selectedPage.value = store.list[targetIdx - 1];
+  function findElementById(id: string, range: ElementStore<ElementTypes>) {
+    const search = (currentLevel: ElementStore<ElementTypes>) => {
+      const result = currentLevel.list.find(id_ => id_ === id);
+      if (result) {
+        return { target: currentLevel.detail[result], parent: currentLevel };
+      } else {
+        currentLevel.list.forEach(id_ => {
+          const children = currentLevel.detail[id_].children;
+          if (children) {
+            search(children);
+          }
+        })
+      }
     }
+    return search(range);
   }
 
-  function findPageByName(name: string) {
-    const pageList = Object.values(store.detail);
-    return pageList.filter(page => {
-      return page.name.toLowerCase().includes(name.toLowerCase());
-    });
-  }
-
-  function clonePage(topNodeId: string) {
-    const topNode = store.detail[topNodeId]; // 복제할 원본 페이지
-    const newId = uuidv4(); // 새 아이디 
-    const newVal: PageElement = JSON.parse(JSON.stringify(topNode)); // 연결성을 끊은 새 객체
-
-    newVal.id = newId; // 새 객체의 id값 교체
-    store.list.push(newId); // 새 아이디를 페이지 리스트에 추가 
-    store.detail[newId] = newVal; // 새 객체 등록
-    deepChangeUuid(newId, store); // 새 객체의 모든 자손의 uuid 교체
-
-    selectedPage.value = newId;
-  }
-
-  function setPageAsHome(id: string) {
-    // 기존 홈페이지명 변경 
-    const prevHome = Object.values(store.detail).find(page => page.isHome === true);
-    if (prevHome) {
-      prevHome.isHome = false;
-      prevHome.name = 'old-home';
+  function findElementByName(name: string, range: ElementStore<ElementTypes>) {
+    const result: ElementTypes[] = [];
+    const search = (currentLevel: ElementStore<ElementTypes>) => {
+      currentLevel.list.forEach(id_ => {
+        const item = currentLevel.detail[id_];
+        if (item.name.toLowerCase().includes(name.toLowerCase())) {
+          result.push(item);
+        } else {
+          search(item.children);
+        }
+      })
     }
-    
-    // 새 홈페이지명 변경
-    const newHome = store.detail[id];
-    if (newHome) {
-      newHome.isHome = true;
-      newHome.name = 'Home';
-    }
-
-    // 순서 변경
-    const reorderedList = store.list.filter(id_ => id_ !== id);
-    reorderedList.unshift(id);
-    store.list = reorderedList;
+    search(range);
+    return result;
   }
 
   // 중첩된 모든 자손 엘리먼트의 uuid를 새로 교체하는 함수
-  function deepChangeUuid(id: string, container: ElementStore<ElementTypes>) {
+  function changeDecendantIds(id: string, container: ElementStore<ElementTypes>) {
     const original = container.detail[id];
     const newChildren: ElementStore<ElementTypes> = { list: [], detail: {} };
     if (original.children?.list?.length) {
@@ -188,8 +147,84 @@ export const usePageStore = defineStore('page', () => {
       });
     }
     original.children = newChildren;
-    newChildren.list.forEach(id_ => deepChangeUuid(id_, newChildren));
+    newChildren.list.forEach(id_ => changeDecendantIds(id_, newChildren));
   }
 
-  return { store, selectedPage, selectedElement, addPage, deletePage, findPageByName, clonePage, setPageAsHome };
+  function addElement(element: ElementTypes, parent: ElementStore<ElementTypes>) {
+    parent.list.push(element.id);
+    parent.detail[element.id] = element;
+  }
+
+  function deleteElement(id: string, range: ElementStore<ElementTypes>) {
+    const result = findElementById(id, range);
+    if (result) {
+      const { target, parent } = result;
+      if (target.type === 'page') {
+        if ((target as PageElement).isHome) return;
+      }
+
+      parent.list = parent.list.filter(id_ => id_ !== id);
+      delete parent.detail[id];
+
+      if (target.type === 'page' || target.type === 'folder') {
+        // todo 타겟에서 가장 가까운 페이지 선택
+      }
+    }
+  }
+
+  function cloneElement(element: ElementTypes, parent: ElementStore<ElementTypes>) {
+    const newId = uuidv4();
+    const newVal: ElementTypes = JSON.parse(JSON.stringify(element));
+
+    newVal.id = newId;
+    parent.list.push(newId);
+    parent.detail[newId] = newVal;
+    changeDecendantIds(newId, parent);
+
+    if (element.type === 'page') {
+      selectedPage.value = newId;
+    }
+
+    return newVal;
+  }
+
+  /* ====================================================================================================================================================================================
+  Page
+  ==================================================================================================================================================================================== */
+
+  const selectedPage = ref(store.list[0]); // selected from LNB
+
+  function setPageAsHome(id: string) {
+    // 기존 홈페이지명 변경 
+    const prevHome = Object.values(store.detail).find(page => {
+      if (page.type === 'page') {
+        return (page as PageElement).isHome === true;
+      }
+    }) as PageElement;
+
+    if (prevHome) {
+      prevHome.isHome = false;
+      prevHome.name = 'old-home';
+    }
+    
+    // 새 홈페이지명 변경
+    const newHome = store.detail[id];
+    if (newHome.type === 'page') {
+      (newHome as PageElement).isHome = true;
+      newHome.name = 'Home';
+    }
+
+    // 순서 변경
+    const reorderedList = store.list.filter(id_ => id_ !== id);
+    reorderedList.unshift(id);
+    store.list = reorderedList;
+  }
+
+  /* ====================================================================================================================================================================================
+  Graphic Element
+  ==================================================================================================================================================================================== */
+
+  const selectedElement = reactive<ElementTypes[]>([]); // selected from Canvas
+
+  return { store, selectedPage, selectedElement, setPageAsHome, findElementById, findElementByName, addElement, deleteElement, cloneElement };
 });
