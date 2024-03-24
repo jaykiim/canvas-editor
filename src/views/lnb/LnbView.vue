@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import LnbPageView from './LnbPageView.vue';
-import LnbLayerView from './LnbLayerView.vue';
-import LnbAssetView from './LnbAssetView.vue';
+import LnbPageView from './pages/LnbPagesView.vue';
+import LnbLayerView from './layers/LnbLayersView.vue';
+import LnbAssetView from './assets/LnbAssetsView.vue';
 import type { LnbTabInterface } from '@/types/Editor';
 import type { Keyof } from '@/types/utils';
 
@@ -96,4 +96,4 @@ function onClickTab(tab: Keyof<typeof tabs.data>) {
 .tab-content {
   // padding: 10px 15px;
 }
-</style>
+</style>./assets/LnbAssetsView.vue

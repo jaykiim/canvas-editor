@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue';
+import { inject, ref, type PropType, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
-import { MagnifyingGlassIcon, HomeIcon, DocumentIcon, FolderIcon } from '@heroicons/vue/24/outline';
-import { PlusCircleIcon } from '@heroicons/vue/24/solid';
+import { HomeIcon, DocumentIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
 
 import { usePageStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
-import type { Ref } from 'vue';
-import type { DirectoryTypes, FolderElement, PageElement } from '@/types/Element';
+import type { DirectoryTypes, ElementStore, ElementTypes, FolderElement, PageElement } from '@/types/Element';
+
+const props = defineProps({
+  list: { type: Array as PropType<string[]>, required: true },
+  level: { type: Object as PropType<ElementStore<ElementTypes>>, required: true },
+  depth: { type: Number, required: true }
+});
+
+const elementStore = usePageStore();
+const { store, selectedPage } = storeToRefs(elementStore);
 
 /* =======================================================================================================================================
 컨텍스트 메뉴
@@ -105,6 +112,8 @@ function setPageContextMenu(page: PageElement) {
   ];
 }
 
+// add 기능 ------------------------------------------------------------------------------------------------------------------------------------
+
 function addDirectory(type: 'folder' | 'page') {
   const id = uuidv4();
   store.value.list.push(id);
@@ -164,113 +173,75 @@ function onDoneRename(directory: DirectoryTypes) {
 }
 
 /* =======================================================================================================================================
-검색
+항목 펼치기 / 접기
 ========================================================================================================================================== */
 
-const elementStore = usePageStore();
-const { store, selectedPage } = storeToRefs(elementStore);
+const fold = ref(false);
 
-const srchKeyword = ref('');
-const searchResult = ref<string[]>(store.value.list);
-const filteredList = computed(() => {
-  if (srchKeyword.value?.length) return searchResult.value;
-  else return store.value.list;
-})
-
-function onSearchPage() {
-  const result = elementStore.findElementByName(srchKeyword.value, store.value);
-  searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder').map(p => p.id);
+function hasChildrenDirectory(id: string) {
+  return Object.values(props.level.detail[id].children.detail).find(e => e.type === 'page' || e.type === 'folder');
 }
+
+function toggleFold() {
+  fold.value = !fold.value;
+}
+
 </script>
 
 <template>
-  <div class="lnb-page__header">
-    <!-- 항목 검색 -->
-    <div class="search-container center">
-      <MagnifyingGlassIcon class="search-icon" />
-      <input type="text" class="search-input" placeholder="Find..." v-model="srchKeyword" @input="onSearchPage">
-    </div>
+  <template v-for="id in list" :key="id">
+    <div 
+      v-if="level.detail[id].type === 'page' || level.detail[id].type === 'folder'"
+      class="page-item" 
+      :class="id === selectedPage && 'selected'" 
+      :style="{ paddingLeft: 7 + depth * 20 + 'px' }"
+      @click="selectedPage = id"
+      @contextmenu.prevent="openContextMenu($event, level.detail[id] as DirectoryTypes)"
+    >
+      <!-- 아이콘 -->
+      <div class="center icon-container">
+        <!-- 펼치기 / 접기 -->
+        <template v-if="hasChildrenDirectory(id)">
+          <ChevronRightIcon v-if="fold" class="fold-icon" @click="toggleFold"/>
+          <ChevronDownIcon v-else class="fold-icon" @click="toggleFold" />
+        </template>
 
-    <!-- 추가 버튼 -->
-    <PlusCircleIcon v-if="!srchKeyword?.length" @click="openContextMenu" class="header-icon center"/>
-  </div>
+        <!-- 페이지 -->
+        <template v-if="level.detail[id].type === 'page'">
+          <HomeIcon v-if="(level.detail[id] as PageElement).isHome" class="page-icon" />
+          <DocumentIcon v-else class="page-icon"/>
+        </template>
+        <!-- 폴더 -->
+        <FolderIcon v-else class="page-icon" />
+      </div>
 
-  <div class="lnb-page__body">
-    <!-- 페이지 항목 -->
-    <template v-if="filteredList.length">
-      <div 
-        v-for="id in filteredList" 
-        class="page-item" 
-        :class="id === selectedPage && 'selected'" 
-        :key="id"
-        @click="selectedPage = id"
-        @contextmenu.prevent="openContextMenu($event, store.detail[id])"
-      >
-        <!-- 아이콘 -->
-        <div class="page-icon center">
-          <!-- 페이지 -->
-          <template v-if="store.detail[id].type === 'page'">
-            <HomeIcon v-if="(store.detail[id] as PageElement).isHome" />
-            <DocumentIcon v-else />
-          </template>
-          <FolderIcon v-else/>
-        </div>
-
-        <!-- 페이지명 -->
-        <div class="page-label" @dblclick="onStartRename(store.detail[id])">
-          <input 
-            v-if="isNameEditing === id" 
-            :id="'input-' + id"
-            autofocus 
-            type="text" 
-            v-model="newDirectoryName" 
-            @blur="onDoneRename(store.detail[id])"
-            @keydown.enter="onDoneRename(store.detail[id])"
-          />
-          <div v-else>
-            {{ store.detail[id].name }}
-          </div>
+      <!-- 항목명 -->
+      <div class="page-label" @dblclick="onStartRename(level.detail[id] as DirectoryTypes)">
+        <input 
+          v-if="isNameEditing === id" 
+          :id="'input-' + id"
+          autofocus 
+          type="text" 
+          v-model="newDirectoryName" 
+          @blur="onDoneRename(level.detail[id] as DirectoryTypes)"
+          @keydown.enter="onDoneRename(level.detail[id] as DirectoryTypes)"
+        />
+        <div v-else>
+          {{ level.detail[id].name }}
         </div>
       </div>
-    </template>
+    </div>
 
-    <!-- 검색 결과 미존재 시 -->
-    <div class="page-item no-result" v-else>No results</div>
-  </div>
+    <ListView 
+      v-if="level.detail[id].children.list?.length && (fold === false)" 
+      :list="level.detail[id].children.list" 
+      :level="level.detail[id].children" 
+      :depth="depth + 1"
+    />
+  </template>
 </template>
 
 <style scoped lang="scss">
-.lnb-page__header {
-  display: flex;
-  padding: 20px 15px;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px; 
-
-  .search-container {
-    padding-right: 15px;
-    border-bottom: 1px solid  #e6e6e6;
-    padding: 5px;
-
-    .search-icon {
-      width: 13px;
-      height: 13px;
-      margin-right: 5px;
-    }
-
-    .search-input {
-      border: none;
-      outline: none;
-    }
-  }
-
-  .header-icon {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-  }
-}
-
 .lnb-page__body > .page-item {
   display: flex;
   padding: 5px 15px;
@@ -289,10 +260,24 @@ function onSearchPage() {
     color: #595959;
   }
 
+  .icon-container {
+    position: relative;
+  }
+
   .page-icon {
     width: 14px;
     height: 14px;
-    margin-right: 14px;
+    margin-right: 10px;
+  }
+
+  .fold-icon {
+    position: absolute;
+    top: 50%;
+    left: -20px;
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    transform: translate(0, -50%);
   }
 
   .page-label {

@@ -5,7 +5,7 @@ import type { ElementStore, PageElement, ElementTypes, DirectoryTypes } from '@/
 
 export const usePageStore = defineStore('page', () => {
   const store = reactive<ElementStore<DirectoryTypes>>({
-    list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '6d975107-3ffb-422f-8b2d-83a95361738d'],
+    list: ['1d5c2a17-ebd8-4075-8c94-8081c668fc20', '3f9c5075-7fa7-4f02-83aa-a794bda3bd51', '089ad87q-ifac-10uk-253f-1047dk38dfck'],
     detail: {
       '1d5c2a17-ebd8-4075-8c94-8081c668fc20': {
         isHome: true,
@@ -24,7 +24,7 @@ export const usePageStore = defineStore('page', () => {
             '416ce213-d8ac-4b71-9269-48b80729d028': {
               id: '416ce213-d8ac-4b71-9269-48b80729d028',
               type: 'shape',
-              name: 'object1',
+              name: 'shape1',
               width: 100,
               height: 150,
               x: 100,
@@ -41,7 +41,7 @@ export const usePageStore = defineStore('page', () => {
             'e7a7666e-49a7-4212-9941-4398a7c16a2c': {
               id: 'e7a7666e-49a7-4212-9941-4398a7c16a2c',
               type: 'shape',
-              name: 'object1',
+              name: 'shape2',
               width: 100,
               height: 150,
               x: 100,
@@ -59,8 +59,8 @@ export const usePageStore = defineStore('page', () => {
           }
         }
       },
-      '6d975107-3ffb-422f-8b2d-83a95361738d': {
-        id: '6d975107-3ffb-422f-8b2d-83a95361738d',
+      '3f9c5075-7fa7-4f02-83aa-a794bda3bd51': {
+        id: '3f9c5075-7fa7-4f02-83aa-a794bda3bd51',
         type: 'page',
         name: 'test2',
         width: 1200,
@@ -75,12 +75,12 @@ export const usePageStore = defineStore('page', () => {
             '53be25bf-eb5c-4e36-9364-c0271b921a4b': {
               id: '53be25bf-eb5c-4e36-9364-c0271b921a4b',
               type: 'shape',
-              name: 'testObj1',
+              name: 'shape3',
               width: 100,
               height: 150,
               x: 600,
               y: 400,
-              parentId: '6d975107-3ffb-422f-8b2d-83a95361738d',
+              parentId: '3f9c5075-7fa7-4f02-83aa-a794bda3bd51',
               properties: {
                 backgroundColor: '#bbb',
               },
@@ -88,6 +88,29 @@ export const usePageStore = defineStore('page', () => {
                 list: [],
                 detail: {}
               }
+            }
+          }
+        }
+      },
+      '089ad87q-ifac-10uk-253f-1047dk38dfck': {
+        id: '089ad87q-ifac-10uk-253f-1047dk38dfck',
+        type: 'folder',
+        name: 'folder',
+        parentId: '',
+        children: {
+          list: ['56f4e3e8-309d-4d38-bc34-d1096e7aa0b4'],
+          detail: {
+            '56f4e3e8-309d-4d38-bc34-d1096e7aa0b4': {
+              id: '56f4e3e8-309d-4d38-bc34-d1096e7aa0b4',
+              type: 'page',
+              name: 'testtest',
+              parentId: '089ad87q-ifac-10uk-253f-1047dk38dfck',
+              x: 0,
+              y: 0,
+              width: 1920,
+              height: 1080,
+              scale: 1,
+              children: { list: [], detail: {} }
             }
           }
         }
