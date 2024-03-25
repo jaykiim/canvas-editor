@@ -82,14 +82,12 @@ const { store } = storeToRefs(elementStore);
 const srchKeyword = ref('');
 const searchResult = ref<ElementTypes[]>(Object.values(store.value.detail));
 const filteredList = computed(() => {
-  console.log('filteredList computed', searchResult.value, Object.values(store.value.detail));
   if (srchKeyword.value?.length) return searchResult.value;
   else return Object.values(store.value.detail);
 })
 
 function onSearchPage() {
   const result = elementStore.findElementByName(srchKeyword.value, store.value);
-  console.log('search result: ', result.filter(e => e.type === 'page' || e.type === 'folder'));
   searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder');
 }
 </script>
