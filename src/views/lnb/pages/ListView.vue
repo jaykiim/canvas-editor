@@ -283,6 +283,8 @@ function toggleFold(element: DirectoryTypes) {
 }
 
 .lnb-page__body > .page-item:hover {
-  border: 1px solid #0e81e6;
+  &:not(.selected) {
+    border: 1px solid #0e81e6;
+  }
 }
 </style>
