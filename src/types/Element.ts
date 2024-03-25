@@ -25,6 +25,7 @@ interface ElementStore<T extends ElementTypes> {
 type DirectoryTypes = FolderElement | PageElement;
 
 interface DirectoryElementProps extends ElementCommonProps {
+  fold: boolean;  // 접힘/펼침 상태
 }
 
 interface FolderElement extends DirectoryElementProps {

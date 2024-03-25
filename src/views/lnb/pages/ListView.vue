@@ -124,6 +124,7 @@ function addDirectory(type: 'folder' | 'page') {
       parentId: '',
       type: 'folder',
       name: 'folder',
+      fold: false,
       children: { list: [], detail: {} }
     };
     store.value.detail[id] = newFolder;
@@ -133,6 +134,7 @@ function addDirectory(type: 'folder' | 'page') {
       parentId: '',
       type: 'page',
       name: 'page',
+      fold: false,
       children: { list: [], detail: {} },
       scale: 1,
       x: 0,
@@ -176,14 +178,12 @@ function onDoneRename(directory: DirectoryTypes) {
 항목 펼치기 / 접기
 ========================================================================================================================================== */
 
-const fold = ref(false);
-
 function hasChildrenDirectory(id: string) {
   return Object.values(props.level.detail[id].children.detail).find(e => e.type === 'page' || e.type === 'folder');
 }
 
-function toggleFold() {
-  fold.value = !fold.value;
+function toggleFold(id: string) {
+  (props.level.detail[id] as DirectoryTypes).fold = !(props.level.detail[id] as DirectoryTypes).fold;
 }
 
 </script>
@@ -202,8 +202,8 @@ function toggleFold() {
       <div class="center icon-container">
         <!-- 펼치기 / 접기 -->
         <template v-if="hasChildrenDirectory(id)">
-          <ChevronRightIcon v-if="fold" class="fold-icon" @click="toggleFold"/>
-          <ChevronDownIcon v-else class="fold-icon" @click="toggleFold" />
+          <ChevronRightIcon v-if="!(level.detail[id] as DirectoryTypes).fold" class="fold-icon" @click="toggleFold(id)"/>
+          <ChevronDownIcon v-else class="fold-icon" @click="toggleFold(id)" />
         </template>
 
         <!-- 페이지 -->
@@ -233,7 +233,7 @@ function toggleFold() {
     </div>
 
     <ListView 
-      v-if="level.detail[id].children.list?.length && (fold === false)" 
+      v-if="level.detail[id].children.list?.length && (level.detail[id] as DirectoryTypes).fold" 
       :list="level.detail[id].children.list" 
       :level="level.detail[id].children" 
       :depth="depth + 1"

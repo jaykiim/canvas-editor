@@ -2,7 +2,7 @@
 import { computed, inject, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
-import { MagnifyingGlassIcon, HomeIcon, DocumentIcon, FolderIcon } from '@heroicons/vue/24/outline';
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 import { PlusCircleIcon } from '@heroicons/vue/24/solid';
 
 import { usePageStore } from '@/stores/page';
@@ -10,7 +10,7 @@ import ContextMenu from '@/components/ContextMenu.vue';
 import ListView from './ListView.vue';
 
 import type { Ref } from 'vue';
-import type { DirectoryTypes, FolderElement, PageElement } from '@/types/Element';
+import type { FolderElement, PageElement } from '@/types/Element';
 
 /* =======================================================================================================================================
 컨텍스트 메뉴
@@ -18,22 +18,9 @@ import type { DirectoryTypes, FolderElement, PageElement } from '@/types/Element
 
 const contextMenuRef = inject<Ref<InstanceType<typeof ContextMenu>>>('contextMenuRef');
 
-function openContextMenu(e: MouseEvent, item?: DirectoryTypes) {
+function openContextMenu(e: MouseEvent) {
   if (!contextMenuRef?.value) return;
-
-  if (item) {
-    if (item.type === 'page') {
-      selectedPage.value = item.id;
-      contextMenuRef.value.open(setPageContextMenu(item as PageElement), e.clientX, e.clientY, 170);
-    } else {
-      contextMenuRef.value.open(setFolderContextMenu(item as FolderElement), e.clientX, e.clientY, 170);
-    }
-  }
-
-  // 디렉토리 추가
-  else {
-    contextMenuRef.value.open(setAddContextMenu(), e.clientX, e.clientY, 120);
-  }
+  contextMenuRef.value.open(setAddContextMenu(), e.clientX, e.clientY, 120);
 }
 
 function setAddContextMenu() {
@@ -51,61 +38,6 @@ function setAddContextMenu() {
   ]
 }
 
-function setFolderContextMenu(folder: FolderElement) {
-  return [
-    {
-      id: 'folder:rename',
-      label: '폴더명 변경',
-      shortcut: '⌘R',
-      exec: () => onStartRename(folder)
-    },
-    {
-      id: 'folder:clone',
-      label: '폴더 복제',
-      shortcut: '⇧⌘C',
-      exec: () => elementStore.cloneElement(folder, store.value)
-    },
-    {
-      id: 'folder:delete',
-      label: '폴더 삭제',
-      exec: () => elementStore.deleteElement(folder.id, store.value)
-    }
-  ]
-}
-
-function setPageContextMenu(page: PageElement) {
-  return [
-    {
-      id: 'page:rename',
-      label: '페이지명 변경',
-      shortcut: '⌘R',
-      disabled: page.isHome,
-      exec: () => onStartRename(page)
-    },
-    {
-      id: 'page:clone',
-      label: '페이지 복제',
-      shortcut: '⇧⌘C',
-      exec: () => elementStore.cloneElement(page, store.value)
-    },
-    {
-      id: 'page:delete',
-      label: '페이지 삭제',
-      disabled: page.isHome,
-      exec: () => elementStore.deleteElement(page.id, store.value)
-    },
-    {
-      id: '-'
-    },
-    {
-      id: 'page:set-home',
-      label: '홈페이지로 변경',
-      disabled: page.isHome,
-      exec: () => elementStore.setPageAsHome(page.id)
-    }
-  ];
-}
-
 // add 기능 ------------------------------------------------------------------------------------------------------------------------------------
 
 function addDirectory(type: 'folder' | 'page') {
@@ -118,6 +50,7 @@ function addDirectory(type: 'folder' | 'page') {
       parentId: '',
       type: 'folder',
       name: 'folder',
+      fold: false,
       children: { list: [], detail: {} }
     };
     store.value.detail[id] = newFolder;
@@ -127,6 +60,7 @@ function addDirectory(type: 'folder' | 'page') {
       parentId: '',
       type: 'page',
       name: 'page',
+      fold: false,
       children: { list: [], detail: {} },
       scale: 1,
       x: 0,
@@ -138,52 +72,22 @@ function addDirectory(type: 'folder' | 'page') {
   }
 }
 
-// rename 기능 ------------------------------------------------------------------------------------------------------------------------------------
-
-const isNameEditing = ref('');
-const newDirectoryName = ref('');
-
-function onStartRename(directory: DirectoryTypes) {
-  if (directory.type === 'page') {
-    if ((directory as PageElement).isHome) return;
-  }
-
-  isNameEditing.value = directory.id;
-  newDirectoryName.value = directory.name;
-
-  // Rename 시작 시 자동 포커스
-  setTimeout(() => {
-    const input = document.getElementById(`input-${directory.id}`) as HTMLInputElement;
-    if (input) input.focus();
-  }, 0);
-}
-
-function onDoneRename(directory: DirectoryTypes) {
-  if (newDirectoryName.value?.trim()?.length) {
-    directory.name = newDirectoryName.value
-  }
-  newDirectoryName.value = '';
-  isNameEditing.value = '';
-}
-
 /* =======================================================================================================================================
 검색
 ========================================================================================================================================== */
 
 const elementStore = usePageStore();
-const { store, selectedPage } = storeToRefs(elementStore);
+const { store } = storeToRefs(elementStore);
 
 const srchKeyword = ref('');
 const searchResult = ref<string[]>(store.value.list);
 const filteredList = computed(() => {
-  // console.log('computed')
   if (srchKeyword.value?.length) return searchResult.value;
   else return store.value.list;
 })
 
 function onSearchPage() {
   const result = elementStore.findElementByName(srchKeyword.value, store.value);
-  // console.log('srch result', result.filter(e => e.type === 'page' || e.type === 'folder'));
   searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder').map(p => p.id);
 }
 </script>
@@ -202,39 +106,6 @@ function onSearchPage() {
 
   <div class="lnb-page__body">
     <ListView v-if="filteredList.length" :list="filteredList" :level="store" :depth="1" />
-    <!-- <template v-if="filteredList.length">
-      <div 
-        v-for="id in filteredList" 
-        class="page-item" 
-        :class="id === selectedPage && 'selected'" 
-        :key="id"
-        @click="selectedPage = id"
-        @contextmenu.prevent="openContextMenu($event, store.detail[id])"
-      >
-        <div class="page-icon center">
-          <template v-if="store.detail[id].type === 'page'">
-            <HomeIcon v-if="(store.detail[id] as PageElement).isHome" />
-            <DocumentIcon v-else />
-          </template>
-          <FolderIcon v-else/>
-        </div>
-
-        <div class="page-label" @dblclick="onStartRename(store.detail[id])">
-          <input 
-            v-if="isNameEditing === id" 
-            :id="'input-' + id"
-            autofocus 
-            type="text" 
-            v-model="newDirectoryName" 
-            @blur="onDoneRename(store.detail[id])"
-            @keydown.enter="onDoneRename(store.detail[id])"
-          />
-          <div v-else>
-            {{ store.detail[id].name }}
-          </div>
-        </div>
-      </div>
-    </template> -->
 
     <!-- 검색 결과 미존재 시 -->
     <div class="page-item no-result" v-else>No results</div>
