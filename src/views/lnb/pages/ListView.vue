@@ -184,6 +184,49 @@ function hasChildrenDirectory(element: DirectoryTypes) {
 function toggleFold(element: DirectoryTypes) {
   element.fold = !element.fold;
 }
+
+/* =======================================================================================================================================
+드래그 앤 드랍
+========================================================================================================================================== */
+
+/*
+
+@dragstart, @drop: .page-item에 등록
+@dragover: .lnb-page__header (리스트 컨테이너 div) 영역 넘어갈 경우 firstChild 또는 lastChild에 가이드 표시하기 위해 전역 등록
+@dragleave: mousemove, el.elementFromPoint(x, y)로 구현
+
+*/
+
+const dragging = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined });
+
+function onMousedown(e: MouseEvent, element: DirectoryTypes) {
+  if (element.type === 'page') {
+    selectedPage.value = element.id;
+  }
+}
+
+function onMouseup(e: MouseEvent, element: DirectoryTypes) { 
+}
+
+function onDragStart(e: DragEvent, element: DirectoryTypes) {
+  e.dataTransfer?.setDragImage(new Image, 0, 0); // 드래그 이미지 제거
+  
+  const div = e.target as HTMLDivElement;
+
+  dragging.value.element = element;
+  dragging.value.div = div;
+}
+
+function onDragLeave(e: DragEvent, element: DirectoryTypes) {
+  console.log('leave', element.name);
+}
+
+function onDragEnter(e: DragEvent, element: DirectoryTypes) {
+  // console.log('enter', element.name);
+}
+
+function onDrop(e: DragEvent, element: DirectoryTypes) {
+}
 </script>
 
 <template>
@@ -193,7 +236,13 @@ function toggleFold(element: DirectoryTypes) {
       class="page-item" 
       :class="element.id === selectedPage && 'selected'" 
       :style="{ paddingLeft: 7 + depth * 20 + 'px' }"
-      @click="element.type === 'page' && (selectedPage = element.id)"
+      draggable="true"
+      @mousedown.stop="onMousedown($event, element as DirectoryTypes)"
+      @mouseup.stop="onMouseup($event, element as DirectoryTypes)"
+      @dragstart.stop="onDragStart($event, element as DirectoryTypes)"
+      @dragleave.stop="onDragLeave($event, element as DirectoryTypes)"
+      @dragenter.stop="onDragEnter($event, element as DirectoryTypes)"
+      @drop.stop="onDrop($event, element as DirectoryTypes)"
       @contextmenu.prevent="openContextMenu($event, element as DirectoryTypes)"
     >
       <!-- 아이콘 -->
@@ -283,7 +332,7 @@ function toggleFold(element: DirectoryTypes) {
 }
 
 .lnb-page__body > .page-item:hover {
-  &:not(.selected) {
+  &:not(.selected, .dragging) {
     border: 1px solid #0e81e6;
   }
 }
