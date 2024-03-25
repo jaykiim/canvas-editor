@@ -7,11 +7,10 @@ import { HomeIcon, DocumentIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon }
 import { usePageStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
-import type { DirectoryTypes, ElementStore, ElementTypes, FolderElement, PageElement } from '@/types/Element';
+import type { DirectoryTypes, ElementTypes, FolderElement, PageElement } from '@/types/Element';
 
-const props = defineProps({
-  list: { type: Array as PropType<string[]>, required: true },
-  level: { type: Object as PropType<ElementStore<ElementTypes>>, required: true },
+defineProps({
+  list: { type: Array as PropType<ElementTypes[]>, required: true },
   depth: { type: Number, required: true }
 });
 
@@ -168,7 +167,7 @@ function onStartRename(directory: DirectoryTypes) {
 
 function onDoneRename(directory: DirectoryTypes) {
   if (newDirectoryName.value?.trim()?.length) {
-    directory.name = newDirectoryName.value
+    directory.name = newDirectoryName.value;
   }
   newDirectoryName.value = '';
   isNameEditing.value = '';
@@ -178,37 +177,36 @@ function onDoneRename(directory: DirectoryTypes) {
 항목 펼치기 / 접기
 ========================================================================================================================================== */
 
-function hasChildrenDirectory(id: string) {
-  return Object.values(props.level.detail[id].children.detail).find(e => e.type === 'page' || e.type === 'folder');
+function hasChildrenDirectory(element: DirectoryTypes) {
+  return Object.values(element.children.detail).find(child => child.type === 'page' || child.type === 'folder');
 }
 
-function toggleFold(id: string) {
-  (props.level.detail[id] as DirectoryTypes).fold = !(props.level.detail[id] as DirectoryTypes).fold;
+function toggleFold(element: DirectoryTypes) {
+  element.fold = !element.fold;
 }
-
 </script>
 
 <template>
-  <template v-for="id in list" :key="id">
+  <template v-for="element of list" :key="element.id">
     <div 
-      v-if="level.detail[id].type === 'page' || level.detail[id].type === 'folder'"
+      v-if="element.type === 'page' || element.type === 'folder'"
       class="page-item" 
-      :class="id === selectedPage && 'selected'" 
+      :class="element.id === selectedPage && 'selected'" 
       :style="{ paddingLeft: 7 + depth * 20 + 'px' }"
-      @click="selectedPage = id"
-      @contextmenu.prevent="openContextMenu($event, level.detail[id] as DirectoryTypes)"
+      @click="element.type === 'page' && (selectedPage = element.id)"
+      @contextmenu.prevent="openContextMenu($event, element as DirectoryTypes)"
     >
       <!-- 아이콘 -->
       <div class="center icon-container">
         <!-- 펼치기 / 접기 -->
-        <template v-if="hasChildrenDirectory(id)">
-          <ChevronRightIcon v-if="!(level.detail[id] as DirectoryTypes).fold" class="fold-icon" @click="toggleFold(id)"/>
-          <ChevronDownIcon v-else class="fold-icon" @click="toggleFold(id)" />
+        <template v-if="hasChildrenDirectory(element as DirectoryTypes)">
+          <ChevronRightIcon v-if="!(element as DirectoryTypes).fold" class="fold-icon" @click="toggleFold(element as DirectoryTypes)"/>
+          <ChevronDownIcon v-else class="fold-icon" @click="toggleFold(element as DirectoryTypes)" />
         </template>
 
         <!-- 페이지 -->
-        <template v-if="level.detail[id].type === 'page'">
-          <HomeIcon v-if="(level.detail[id] as PageElement).isHome" class="page-icon" />
+        <template v-if="element.type === 'page'">
+          <HomeIcon v-if="(element as PageElement).isHome" class="page-icon" />
           <DocumentIcon v-else class="page-icon"/>
         </template>
         <!-- 폴더 -->
@@ -216,26 +214,25 @@ function toggleFold(id: string) {
       </div>
 
       <!-- 항목명 -->
-      <div class="page-label" @dblclick="onStartRename(level.detail[id] as DirectoryTypes)">
+      <div class="page-label" @dblclick="onStartRename(element as DirectoryTypes)">
         <input 
-          v-if="isNameEditing === id" 
-          :id="'input-' + id"
+          v-if="isNameEditing === element.id" 
+          :id="'input-' + element.id"
           autofocus 
           type="text" 
           v-model="newDirectoryName" 
-          @blur="onDoneRename(level.detail[id] as DirectoryTypes)"
-          @keydown.enter="onDoneRename(level.detail[id] as DirectoryTypes)"
+          @blur="onDoneRename(element as DirectoryTypes)"
+          @keydown.enter="onDoneRename(element as DirectoryTypes)"
         />
         <div v-else>
-          {{ level.detail[id].name }}
+          {{ element.name }}
         </div>
       </div>
     </div>
 
     <ListView 
-      v-if="level.detail[id].children.list?.length && (level.detail[id] as DirectoryTypes).fold" 
-      :list="level.detail[id].children.list" 
-      :level="level.detail[id].children" 
+      v-if="element.children.list.length && (element as DirectoryTypes).fold" 
+      :list="Object.values(element.children.detail)" 
       :depth="depth + 1"
     />
   </template>

@@ -10,7 +10,7 @@ import ContextMenu from '@/components/ContextMenu.vue';
 import ListView from './ListView.vue';
 
 import type { Ref } from 'vue';
-import type { FolderElement, PageElement } from '@/types/Element';
+import type { ElementTypes, FolderElement, PageElement } from '@/types/Element';
 
 /* =======================================================================================================================================
 컨텍스트 메뉴
@@ -80,15 +80,17 @@ const elementStore = usePageStore();
 const { store } = storeToRefs(elementStore);
 
 const srchKeyword = ref('');
-const searchResult = ref<string[]>(store.value.list);
+const searchResult = ref<ElementTypes[]>(Object.values(store.value.detail));
 const filteredList = computed(() => {
+  console.log('filteredList computed', searchResult.value, Object.values(store.value.detail));
   if (srchKeyword.value?.length) return searchResult.value;
-  else return store.value.list;
+  else return Object.values(store.value.detail);
 })
 
 function onSearchPage() {
   const result = elementStore.findElementByName(srchKeyword.value, store.value);
-  searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder').map(p => p.id);
+  console.log('search result: ', result.filter(e => e.type === 'page' || e.type === 'folder'));
+  searchResult.value = result.filter(e => e.type === 'page' || e.type === 'folder');
 }
 </script>
 
@@ -105,10 +107,10 @@ function onSearchPage() {
   </div>
 
   <div class="lnb-page__body">
-    <ListView v-if="filteredList.length" :list="filteredList" :level="store" :depth="1" />
+    <ListView v-if="filteredList.length" :list="filteredList" :depth="1" />
 
     <!-- 검색 결과 미존재 시 -->
-    <div class="page-item no-result" v-else>No results</div>
+    <div v-else class="page-item no-result">No results</div>
   </div>
 </template>
 
