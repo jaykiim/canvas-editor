@@ -222,39 +222,46 @@ function onMousemove(e: MouseEvent) {
   const { element: draggingEl, div: draggingDiv } = dragging.value;
   if (!draggingEl || !draggingDiv) return;
 
-  // 디렉토리 항목의 DOM 객체 목록 가져오기
+  
+  // 1. 디렉토리 항목 DOM 목록을 순회한다 ************************************************************************************************************
+  
   const listItems = document.getElementsByClassName('page-item');
 
-  // 디렉토리 항목 DOM 목록을 순회하며 현재 드래그 중인 엘리먼트와 겹쳤는지 확인
   Array.prototype.forEach.call(listItems, (listItem: HTMLElement) => {
     if (listItem?.nodeName !== 'DIV' || listItem?.closest('lnb-page__body')) return;
     
     const { top: underlyingTop, bottom: underlyingBtm, height } = listItem.getBoundingClientRect();
     const threshold = height * 0.25; // 상단 또는 하단 25% 지점을 임계값으로 설정
 
-    // 드래그 중인 엘리먼트 아래에 겹친 엘리먼트 찾기
+  // 2. 드래그 중인 엘리먼트 아래에 겹친 엘리먼트를 찾는다 ************************************************************************************************************
+    
     if (e.clientY > underlyingTop && e.clientY < underlyingBtm) {
       const underlyingEl = elementStore.findElementById(listItem.id, store.value);
 
       if (underlyingEl) {
-        // 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거
+
+  // 3. 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거 ************************************************************************************************************
+        
         if (underlying.value.div) {
           underlying.value.div.classList.remove('moveup');
           underlying.value.div.classList.remove('movedown');
           underlying.value.div.classList.remove('insert');
         }
-        // 겹쳐진 항목 갱신
+
+  // 4. 겹쳐진 항목 저장 ************************************************************************************************************
+        
         underlying.value.div = listItem as HTMLDivElement;
         underlying.value.element = underlyingEl.target as DirectoryTypes;
 
-        // 어느 지점에 겹쳤는지 계산하여 가이드 표시
+  // 5. 어느 지점에 겹쳤는지 계산하여 가이드 표시 ************************************************************************************************************
+        
         if (e.clientY < underlyingTop + threshold) {
           action.value = 'moveup';
           listItem.classList.add(action.value);
         } else if (e.clientY > underlyingBtm - threshold) {
           action.value = 'movedown';
           listItem.classList.add(action.value);
-        } else if (underlyingEl.target.id !== draggingEl.id) {
+        } else if (underlyingEl.target.id !== draggingEl.id && !(underlyingEl.target as PageElement).isHome) {
           action.value = 'insert';
           listItem.classList.add(action.value);
         }
@@ -283,7 +290,7 @@ function onMouseup(e: MouseEvent) {
       const dx = Math.abs(e.clientX - mousedownEvent.value.clientX);
       const dy = Math.abs(e.clientY - mousedownEvent.value.clientY);
       
-      // 마우스를 움직인 거리가 드래그라고 볼 수 없으면 return
+      // 드래그가 아니라 클릭인 경우 return
       if (dx < 10 && dy < 10) return;
 
   // 3. 액션 수행 ************************************************************************************************************
@@ -291,7 +298,7 @@ function onMouseup(e: MouseEvent) {
       if (draggingEl && draggingDiv) {
         
         // 3-1. 포개진 항목의 자식으로 삽입
-        if (action.value === 'insert') {
+        if (action.value === 'insert' && !(underlyingEl as PageElement).isHome) {
           elementStore.addElement(draggingEl, underlyingEl.children);
           elementStore.deleteElement(draggingEl.id, store.value);
         } 
@@ -311,7 +318,6 @@ function onMouseup(e: MouseEvent) {
         }
       }
     }
-
   }
 
   dragging.value = { element: undefined, div: undefined };
