@@ -207,6 +207,7 @@ function onMousedown(e: MouseEvent, element: DirectoryTypes) {
 
   if (element.type === 'page') {
     selectedPage.value = element.id;
+    if (element.isHome) return;
   }
 
   if ((e.target as HTMLElement).closest('.lnb-page__body') && (e.target as HTMLElement)?.className === 'drag-cover') {
