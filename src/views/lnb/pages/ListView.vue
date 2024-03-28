@@ -197,11 +197,14 @@ function toggleFold(element: DirectoryTypes) {
 
 */
 
+const mousedownEvent = ref<MouseEvent>();
 const dragging = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined });
 const underlying = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined});
 const action = ref<'moveup' | 'movedown' | 'insert' | ''>('');
 
 function onMousedown(e: MouseEvent, element: DirectoryTypes) {
+  mousedownEvent.value = e;
+
   if (element.type === 'page') {
     selectedPage.value = element.id;
   }
@@ -260,22 +263,57 @@ function onMousemove(e: MouseEvent) {
   });
 }
 
-function onMouseup() { 
-  // 이벤트 제거
-  window.removeEventListener('mousemove', onMousemove);
+function onMouseup(e: MouseEvent) { 
+  // 1. 이벤트 제거 ************************************************************************************************************
+  
+  window.removeEventListener('mousemove', onMousemove); // 가이드 표시
   window.removeEventListener('mouseup', onMouseup);
   
-  // 가이드선 제거
-  const { element, div } = underlying.value;
-  if (element && div) {
-    div.classList.remove('moveup');
-    div.classList.remove('movedown');
-    div.classList.remove('insert');
-  }
+  const { element: underlyingEl, div: underlyingDiv } = underlying.value;
+  const { element: draggingEl, div: draggingDiv } = dragging.value;
+
+  // 2. 가이드선 제거 ************************************************************************************************************
+
+  if (underlyingEl && underlyingDiv) {
+    underlyingDiv.classList.remove('moveup');
+    underlyingDiv.classList.remove('movedown');
+    underlyingDiv.classList.remove('insert');
+
+    if (mousedownEvent.value) {
+      const dx = Math.abs(e.clientX - mousedownEvent.value.clientX);
+      const dy = Math.abs(e.clientY - mousedownEvent.value.clientY);
+      
+      // 마우스를 움직인 거리가 드래그라고 볼 수 없으면 return
+      if (dx < 10 && dy < 10) return;
+
+  // 3. 액션 수행 ************************************************************************************************************
+
+      if (draggingEl && draggingDiv) {
+        
+        // 3-1. 포개진 항목의 자식으로 삽입
+        if (action.value === 'insert') {
+          elementStore.addElement(draggingEl, underlyingEl.children);
+          elementStore.deleteElement(draggingEl.id, store.value);
+        } 
+        
+        else {
+          const underlyingFamily = elementStore.findElementById(underlyingEl.parentId, store.value);
+          if (underlyingFamily) {
+            const underlyingSiblings = underlyingFamily.target.children;
   
-  console.log('underlying: ', underlying.value.element?.name);
-  console.log('dragging: ', dragging.value.element?.name);
-  console.log('action: ', action.value);
+            // 3-2. 포개진 항목의 바로 앞에 삽입
+            if (action.value === 'moveup') {
+              underlyingSiblings
+            }
+  
+            // 3-3. 포개진 항목의 바로 뒤에 삽입
+          } 
+        }
+      }
+    }
+
+  }
+
   dragging.value = { element: undefined, div: undefined };
 }
 </script>
