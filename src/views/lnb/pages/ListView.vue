@@ -256,7 +256,7 @@ function onMousemove(e: MouseEvent) {
 
   // 5. 어느 지점에 겹쳤는지 계산하여 가이드 표시 ************************************************************************************************************
         
-        if (e.clientY < underlyingTop + threshold) {
+        if (e.clientY < underlyingTop + threshold && !(underlyingEl.target as PageElement).isHome) {
           action.value = 'moveup';
           listItem.classList.add(action.value);
         } else if (e.clientY > underlyingBtm - threshold) {
