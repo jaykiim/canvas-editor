@@ -198,34 +198,85 @@ function toggleFold(element: DirectoryTypes) {
 */
 
 const dragging = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined });
+const underlying = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined});
+const action = ref<'moveup' | 'movedown' | 'insert' | ''>('');
 
 function onMousedown(e: MouseEvent, element: DirectoryTypes) {
   if (element.type === 'page') {
     selectedPage.value = element.id;
   }
+
+  if ((e.target as HTMLElement).closest('.lnb-page__body') && (e.target as HTMLElement)?.className === 'drag-cover') {
+    dragging.value.element = element;
+    dragging.value.div = e.target as HTMLDivElement;
+    
+    window.addEventListener('mousemove', onMousemove); // 가이드 표시
+    window.addEventListener('mouseup', onMouseup);
+  } 
 }
 
-function onMouseup(e: MouseEvent, element: DirectoryTypes) { 
+function onMousemove(e: MouseEvent) {
+  const { element: draggingEl, div: draggingDiv } = dragging.value;
+  if (!draggingEl || !draggingDiv) return;
+
+  // 디렉토리 항목의 DOM 객체 목록 가져오기
+  const listItems = document.getElementsByClassName('page-item');
+
+  // 디렉토리 항목 DOM 목록을 순회하며 현재 드래그 중인 엘리먼트와 겹쳤는지 확인
+  Array.prototype.forEach.call(listItems, (listItem: HTMLElement) => {
+    if (listItem?.nodeName !== 'DIV' || listItem?.closest('lnb-page__body')) return;
+    
+    const { top: underlyingTop, bottom: underlyingBtm, height } = listItem.getBoundingClientRect();
+    const threshold = height * 0.25; // 상단 또는 하단 25% 지점을 임계값으로 설정
+
+    // 드래그 중인 엘리먼트 아래에 겹친 엘리먼트 찾기
+    if (e.clientY > underlyingTop && e.clientY < underlyingBtm) {
+      const underlyingEl = elementStore.findElementById(listItem.id, store.value);
+
+      if (underlyingEl) {
+        // 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거
+        if (underlying.value.div) {
+          underlying.value.div.classList.remove('moveup');
+          underlying.value.div.classList.remove('movedown');
+          underlying.value.div.classList.remove('insert');
+        }
+        // 겹쳐진 항목 갱신
+        underlying.value.div = listItem as HTMLDivElement;
+        underlying.value.element = underlyingEl.target as DirectoryTypes;
+
+        // 어느 지점에 겹쳤는지 계산하여 가이드 표시
+        if (e.clientY < underlyingTop + threshold) {
+          action.value = 'moveup';
+          listItem.classList.add(action.value);
+        } else if (e.clientY > underlyingBtm - threshold) {
+          action.value = 'movedown';
+          listItem.classList.add(action.value);
+        } else if (underlyingEl.target.id !== draggingEl.id) {
+          action.value = 'insert';
+          listItem.classList.add(action.value);
+        }
+      }
+    }
+  });
 }
 
-function onDragStart(e: DragEvent, element: DirectoryTypes) {
-  e.dataTransfer?.setDragImage(new Image, 0, 0); // 드래그 이미지 제거
+function onMouseup() { 
+  // 이벤트 제거
+  window.removeEventListener('mousemove', onMousemove);
+  window.removeEventListener('mouseup', onMouseup);
   
-  const div = e.target as HTMLDivElement;
-
-  dragging.value.element = element;
-  dragging.value.div = div;
-}
-
-function onDragLeave(e: DragEvent, element: DirectoryTypes) {
-  console.log('leave', element.name);
-}
-
-function onDragEnter(e: DragEvent, element: DirectoryTypes) {
-  // console.log('enter', element.name);
-}
-
-function onDrop(e: DragEvent, element: DirectoryTypes) {
+  // 가이드선 제거
+  const { element, div } = underlying.value;
+  if (element && div) {
+    div.classList.remove('moveup');
+    div.classList.remove('movedown');
+    div.classList.remove('insert');
+  }
+  
+  console.log('underlying: ', underlying.value.element?.name);
+  console.log('dragging: ', dragging.value.element?.name);
+  console.log('action: ', action.value);
+  dragging.value = { element: undefined, div: undefined };
 }
 </script>
 
@@ -234,17 +285,14 @@ function onDrop(e: DragEvent, element: DirectoryTypes) {
     <div 
       v-if="element.type === 'page' || element.type === 'folder'"
       class="page-item" 
-      :class="element.id === selectedPage && 'selected'" 
+      :class="{ selected: element.id === selectedPage, dragging: dragging.div }"
+      :id="element.id"
       :style="{ paddingLeft: 7 + depth * 20 + 'px' }"
-      draggable="true"
       @mousedown.stop="onMousedown($event, element as DirectoryTypes)"
-      @mouseup.stop="onMouseup($event, element as DirectoryTypes)"
-      @dragstart.stop="onDragStart($event, element as DirectoryTypes)"
-      @dragleave.stop="onDragLeave($event, element as DirectoryTypes)"
-      @dragenter.stop="onDragEnter($event, element as DirectoryTypes)"
-      @drop.stop="onDrop($event, element as DirectoryTypes)"
       @contextmenu.prevent="openContextMenu($event, element as DirectoryTypes)"
     >
+      <div class="drag-cover"></div>
+
       <!-- 아이콘 -->
       <div class="center icon-container">
         <!-- 펼치기 / 접기 -->
@@ -289,6 +337,7 @@ function onDrop(e: DragEvent, element: DirectoryTypes) {
 
 <style scoped lang="scss">
 .lnb-page__body > .page-item {
+  position: relative;
   display: flex;
   padding: 5px 15px;
   align-items: center;
@@ -335,5 +384,24 @@ function onDrop(e: DragEvent, element: DirectoryTypes) {
   &:not(.selected, .dragging) {
     border: 1px solid #0e81e6;
   }
+}
+
+.drag-cover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  user-select: none;
+}
+
+.moveup {
+    border-top: 2px solid #333 !important;
+  }
+.movedown {
+  border-bottom: 2px solid #333 !important;
+}
+.insert {
+  border: 1px solid #0e81e6 !important;
 }
 </style>
