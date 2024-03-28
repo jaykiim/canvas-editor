@@ -127,10 +127,11 @@ export const usePageStore = defineStore('page', () => {
   ==================================================================================================================================================================================== */
 
   function findElementById(id: string, range: ElementStore<ElementTypes>) {
+    let result: { target: ElementTypes; parent: ElementStore<ElementTypes> } | undefined;
     const search = (currentLevel: ElementStore<ElementTypes>) => {
-      const result = currentLevel.list.find(id_ => id_ === id);
-      if (result) {
-        return { target: currentLevel.detail[result], parent: currentLevel };
+      const found = currentLevel.list.find(id_ => id_ === id);
+      if (found) {
+        result = { target: currentLevel.detail[found], parent: currentLevel };
       } else {
         currentLevel.list.forEach(id_ => {
           const children = currentLevel.detail[id_].children;
@@ -140,7 +141,8 @@ export const usePageStore = defineStore('page', () => {
         })
       }
     }
-    return search(range);
+    search(range);
+    return result;
   }
 
   function findElementByName(name: string, range: ElementStore<ElementTypes>) {
