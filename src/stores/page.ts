@@ -243,10 +243,7 @@ export const usePageStore = defineStore('page', () => {
     // 새 홈페이지를 계층 구조에서 최상위로 옮기기
     deleteElement(id, newHome.parent); // 기존 디렉토리에서 제거
     store.list.unshift(id);
-    store.detail = { 
-      [id]: newHome.target as DirectoryTypes,
-      ...store.detail
-    };
+    store.detail[id] = newHome.target as DirectoryTypes;
 
     // 새 홈페이지명 변경
     (newHome.target as PageElement).isHome = true;

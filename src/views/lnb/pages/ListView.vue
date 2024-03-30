@@ -7,7 +7,7 @@ import { HomeIcon, DocumentIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon }
 import { usePageStore } from '@/stores/page';
 import ContextMenu from '@/components/ContextMenu.vue';
 
-import type { DirectoryTypes, ElementTypes, FolderElement, PageElement } from '@/types/Element';
+import type { DirectoryTypes, ElementStore, ElementTypes, FolderElement, PageElement } from '@/types/Element';
 
 const props = defineProps({
   list: { type: Array as PropType<ElementTypes[]>, required: true },
@@ -292,6 +292,7 @@ function onMouseup(e: MouseEvent) {
   const { element: draggingEl, div: draggingDiv } = dragging.value;
 
   // 2. 호버 효과 없애는 클래스 제거 ************************************************************************************************************
+  
   const pageItem = document.getElementsByClassName('page-item');
   if (pageItem) {
     Array.prototype.forEach.call(pageItem, (item: HTMLElement) => {
@@ -299,46 +300,88 @@ function onMouseup(e: MouseEvent) {
     })
   }
 
+  if (!underlyingEl || !underlyingDiv || !draggingEl || !draggingDiv || !mousedownEvent.value) return;
+
   // 3. 가이드선 제거 ************************************************************************************************************
 
-  if (underlyingEl && underlyingDiv) {
-    underlyingDiv.classList.remove('moveup');
-    underlyingDiv.classList.remove('movedown');
-    underlyingDiv.classList.remove('insert');
+  underlyingDiv.classList.remove('moveup');
+  underlyingDiv.classList.remove('movedown');
+  underlyingDiv.classList.remove('insert');
 
-    if (mousedownEvent.value) {
-      const dx = Math.abs(e.clientX - mousedownEvent.value.clientX);
-      const dy = Math.abs(e.clientY - mousedownEvent.value.clientY);
-      
-      // 드래그가 아니라 클릭인 경우 return
-      if (dx < 10 && dy < 10) return;
+  const dx = Math.abs(e.clientX - mousedownEvent.value.clientX);
+  const dy = Math.abs(e.clientY - mousedownEvent.value.clientY);
+  
+  // 드래그가 아니라 클릭인 경우 return
+  if (dx < 10 && dy < 10) return;
 
   // 4. 액션 수행 ************************************************************************************************************
+  
+  if (underlyingEl.id === draggingEl.id) return;
 
-      if (draggingEl && draggingDiv) {
-        // 4-1. 포개진 항목의 자식으로 삽입
-        if (action.value === 'insert' && !(underlyingEl as PageElement).isHome) {
-          elementStore.deleteElement(draggingEl.id, store.value);
-          elementStore.addElement(draggingEl, underlyingEl);
-          underlyingEl.fold = false;
-          console.log('underlying', underlyingEl);
-        }
-        
-        else {
-          const underlyingFamily = elementStore.findElementById(underlyingEl.parentId, store.value);
-          if (underlyingFamily) {
-            const underlyingSiblings = underlyingFamily.target.children;
+  // 4-1. 포개진 항목의 자식으로 삽입
+  if (action.value === 'insert' && !(underlyingEl as PageElement).isHome) {
+    elementStore.deleteElement(draggingEl.id, store.value);
+    elementStore.addElement(draggingEl, underlyingEl);
+    underlyingEl.fold = false;
+  }
   
-            // 4-2. 포개진 항목의 바로 앞에 삽입
-            if (action.value === 'moveup') {
-              underlyingSiblings
-            }
-  
-            // 4-3. 포개진 항목의 바로 뒤에 삽입
-          } 
-        }
-      }
+  else {
+    let underlyingStore: ElementStore<ElementTypes> | undefined = store.value;
+    if (underlyingEl.parentId) {
+      console.log('underlying에 parentId 존재');
+      underlyingStore = elementStore.findElementById(underlyingEl.id, store.value)?.parent;
     }
+
+    if (!underlyingStore) return;
+
+    console.log('underlyingEl', underlyingEl.name);
+    console.log('underlyingStore', underlyingStore);
+    // 삽입하고자 하는 목록에 드래그 항목이 이미 존재할 경우 (= 순서만 변경 시) 아이디 목록에서 제거
+    underlyingStore.list = underlyingStore.list.filter(id => id !== draggingEl.id);
+    const underlyingIndex = underlyingStore.list.findIndex(id => id === underlyingEl.id);
+
+    // 4-2. 서로 다른 게층간 이동일 경우
+    if (!underlyingStore.detail[draggingEl.id]) {
+      console.log('서로 다른 게층간 이동', draggingEl.name, draggingEl.id);
+      elementStore.deleteElement(draggingEl.id, store.value);
+      underlyingStore.detail[draggingEl.id] = draggingEl;
+    }
+
+    // 4-3. 포개진 항목의 바로 앞에 삽입
+    if (action.value === 'moveup') {
+      underlyingStore.list.splice(underlyingIndex, 0, draggingEl.id);
+    }
+
+    // 4-4. 포개진 항목의 바로 뒤에 삽입
+    if (action.value === 'movedown') {
+      underlyingStore.list.splice(underlyingIndex + 1, 0, draggingEl.id);
+    }
+
+    console.log('done', store.value);
+
+    // const underlyingFamily = elementStore.findElementById(underlyingEl.parentId, store.value);
+    // console.log('underlying parentid', underlyingEl.parentId);
+    // if (underlyingFamily) {
+    //   const underlyingSiblings = underlyingFamily.target.children;
+    //   const siblingList = underlyingSiblings.list.filter(id => id !== draggingEl.id);
+    //   const underlyingIndex = siblingList.findIndex(id => id === underlyingEl.id);
+      
+    //   // 4-2. 포개진 항목의 바로 앞에 삽입
+    //   if (action.value === 'moveup') {
+    //     siblingList.splice(underlyingIndex, 0, draggingEl.id);
+    //   }
+
+    //   // 4-3. 포개진 항목의 바로 뒤에 삽입
+    //   if (action.value === 'movedown') {
+    //     siblingList.splice(underlyingIndex + 1, 0, draggingEl.id);
+    //   }
+
+    //   // 4-3. dragging 객체 등록
+    //   if (!underlyingSiblings.detail[underlyingEl.id]) {
+    //     underlyingSiblings.detail[underlyingEl.id] = underlyingEl;
+    //   }
+
+    // } 
   }
 
   dragging.value = { element: undefined, div: undefined };
