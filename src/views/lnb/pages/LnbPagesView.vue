@@ -83,7 +83,7 @@ const srchKeyword = ref('');
 const searchResult = ref<ElementTypes[]>(Object.values(store.value.detail));
 const filteredList = computed(() => {
   if (srchKeyword.value?.length) return searchResult.value;
-  else return Object.values(store.value.detail);
+  else return store.value.list.map(id => store.value.detail[id]); // list 배열 상의 순서에 따라 filteredList 구성
 })
 
 function onSearchPage() {

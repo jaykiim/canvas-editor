@@ -394,7 +394,7 @@ function onMouseup(e: MouseEvent) {
 
     <ListView 
       v-if="element.children.list.length && (element as DirectoryTypes).fold" 
-      :list="Object.values(element.children.detail)" 
+      :list="element.children.list.map(id => element.children.detail[id])" 
       :depth="depth + 1"
       :srchKeyword="srchKeyword"
     />
