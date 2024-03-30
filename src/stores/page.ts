@@ -225,6 +225,9 @@ export const usePageStore = defineStore('page', () => {
   const selectedPage = ref(store.list[0]); // selected from LNB
 
   function setPageAsHome(id: string) {
+    const newHome = findElementById(id, store);
+    if (!newHome || newHome?.target.type !== 'page') return;
+
     // 기존 홈페이지명 변경 
     const prevHome = Object.values(store.detail).find(page => {
       if (page.type === 'page') {
@@ -237,17 +240,21 @@ export const usePageStore = defineStore('page', () => {
       prevHome.name = 'old-home';
     }
     
-    // 새 홈페이지명 변경
-    const newHome = findElementById(id, store);
-    if (newHome?.target.type === 'page') {
-      (newHome.target as PageElement).isHome = true;
-      newHome.target.name = 'Home';
-    }
+    // 새 홈페이지를 계층 구조에서 최상위로 옮기기
+    deleteElement(id, newHome.parent); // 기존 디렉토리에서 제거
+    store.list.unshift(id);
+    store.detail = { 
+      [id]: newHome.target as DirectoryTypes,
+      ...store.detail
+    };
 
-    // 순서 변경
-    const reorderedList = store.list.filter(id_ => id_ !== id);
-    reorderedList.unshift(id);
-    store.list = reorderedList;
+    // 새 홈페이지명 변경
+    (newHome.target as PageElement).isHome = true;
+    newHome.target.name = 'Home';
+    
+    if (newHome.target.parentId) {
+      newHome.target.parentId = '';
+    }
   }
 
   /* ====================================================================================================================================================================================
