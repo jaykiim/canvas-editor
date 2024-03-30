@@ -9,9 +9,10 @@ import ContextMenu from '@/components/ContextMenu.vue';
 
 import type { DirectoryTypes, ElementTypes, FolderElement, PageElement } from '@/types/Element';
 
-defineProps({
+const props = defineProps({
   list: { type: Array as PropType<ElementTypes[]>, required: true },
-  depth: { type: Number, required: true }
+  depth: { type: Number, required: true },
+  srchKeyword: { type: String, required: true }
 });
 
 const elementStore = usePageStore();
@@ -207,13 +208,21 @@ function onMousedown(e: MouseEvent, element: DirectoryTypes) {
 
   if (element.type === 'page') {
     selectedPage.value = element.id;
-    if (element.isHome) return;
+    if (element.isHome || props.srchKeyword) return; // 검색 중이거나 홈 페이지일 경우 드래그 앤 드롭 방지
   }
 
   if ((e.target as HTMLElement).closest('.lnb-page__body') && (e.target as HTMLElement)?.className === 'drag-cover') {
     dragging.value.element = element;
     dragging.value.div = e.target as HTMLDivElement;
-    
+
+    // 드래그 시 기존 호버 효과 제거
+    const pageItem = document.getElementsByClassName('page-item');
+    if (pageItem) {
+      Array.prototype.forEach.call(pageItem, (item: HTMLElement) => {
+        item.classList.add('dragging');
+      })
+    }
+        
     window.addEventListener('mousemove', onMousemove); // 가이드 표시
     window.addEventListener('mouseup', onMouseup);
   } 
@@ -221,10 +230,9 @@ function onMousedown(e: MouseEvent, element: DirectoryTypes) {
 
 function onMousemove(e: MouseEvent) {
   const { element: draggingEl, div: draggingDiv } = dragging.value;
-  if (!draggingEl || !draggingDiv) return;
+  if (!draggingEl || !draggingDiv) return;  
 
-  
-  // 1. 디렉토리 항목 DOM 목록을 순회한다 ************************************************************************************************************
+  // 2. 디렉토리 항목 DOM 목록을 순회한다 ************************************************************************************************************
   
   const listItems = document.getElementsByClassName('page-item');
 
@@ -234,14 +242,14 @@ function onMousemove(e: MouseEvent) {
     const { top: underlyingTop, bottom: underlyingBtm, height } = listItem.getBoundingClientRect();
     const threshold = height * 0.25; // 상단 또는 하단 25% 지점을 임계값으로 설정
 
-  // 2. 드래그 중인 엘리먼트 아래에 겹친 엘리먼트를 찾는다 ************************************************************************************************************
+  // 3. 드래그 중인 엘리먼트 아래에 겹친 엘리먼트를 찾는다 ************************************************************************************************************
     
     if (e.clientY > underlyingTop && e.clientY < underlyingBtm) {
       const underlyingEl = elementStore.findElementById(listItem.id, store.value);
 
       if (underlyingEl) {
 
-  // 3. 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거 ************************************************************************************************************
+  // 4. 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거 ************************************************************************************************************
         
         if (underlying.value.div) {
           underlying.value.div.classList.remove('moveup');
@@ -249,22 +257,25 @@ function onMousemove(e: MouseEvent) {
           underlying.value.div.classList.remove('insert');
         }
 
-  // 4. 겹쳐진 항목 저장 ************************************************************************************************************
+  // 5. 겹쳐진 항목 저장 ************************************************************************************************************
         
         underlying.value.div = listItem as HTMLDivElement;
         underlying.value.element = underlyingEl.target as DirectoryTypes;
 
-  // 5. 어느 지점에 겹쳤는지 계산하여 가이드 표시 ************************************************************************************************************
+  // 6. 어느 지점에 겹쳤는지 계산하여 가이드 표시 ************************************************************************************************************
         
-        if (e.clientY < underlyingTop + threshold && !(underlyingEl.target as PageElement).isHome) {
-          action.value = 'moveup';
-          listItem.classList.add(action.value);
-        } else if (e.clientY > underlyingBtm - threshold) {
-          action.value = 'movedown';
-          listItem.classList.add(action.value);
-        } else if (underlyingEl.target.id !== draggingEl.id && !(underlyingEl.target as PageElement).isHome) {
-          action.value = 'insert';
-          listItem.classList.add(action.value);
+        // 자기 자신의 자식에 겹친 경우 제외
+        if (underlyingEl.target.parentId !== draggingEl.id) {
+          if (e.clientY < underlyingTop + threshold && !(underlyingEl.target as PageElement).isHome) {
+            action.value = 'moveup';
+            listItem.classList.add(action.value);
+          } else if (e.clientY > underlyingBtm - threshold) {
+            action.value = 'movedown';
+            listItem.classList.add(action.value);
+          } else if (underlyingEl.target.id !== draggingEl.id && !(underlyingEl.target as PageElement).isHome) {
+            action.value = 'insert';
+            listItem.classList.add(action.value);
+          }
         }
       }
     }
@@ -280,7 +291,15 @@ function onMouseup(e: MouseEvent) {
   const { element: underlyingEl, div: underlyingDiv } = underlying.value;
   const { element: draggingEl, div: draggingDiv } = dragging.value;
 
-  // 2. 가이드선 제거 ************************************************************************************************************
+  // 2. 호버 효과 없애는 클래스 제거 ************************************************************************************************************
+  const pageItem = document.getElementsByClassName('page-item');
+  if (pageItem) {
+    Array.prototype.forEach.call(pageItem, (item: HTMLElement) => {
+      item.classList.remove('dragging');
+    })
+  }
+
+  // 3. 가이드선 제거 ************************************************************************************************************
 
   if (underlyingEl && underlyingDiv) {
     underlyingDiv.classList.remove('moveup');
@@ -294,27 +313,28 @@ function onMouseup(e: MouseEvent) {
       // 드래그가 아니라 클릭인 경우 return
       if (dx < 10 && dy < 10) return;
 
-  // 3. 액션 수행 ************************************************************************************************************
+  // 4. 액션 수행 ************************************************************************************************************
 
       if (draggingEl && draggingDiv) {
-        
-        // 3-1. 포개진 항목의 자식으로 삽입
+        // 4-1. 포개진 항목의 자식으로 삽입
         if (action.value === 'insert' && !(underlyingEl as PageElement).isHome) {
-          elementStore.addElement(draggingEl, underlyingEl.children);
           elementStore.deleteElement(draggingEl.id, store.value);
-        } 
+          elementStore.addElement(draggingEl, underlyingEl);
+          underlyingEl.fold = false;
+          console.log('underlying', underlyingEl);
+        }
         
         else {
           const underlyingFamily = elementStore.findElementById(underlyingEl.parentId, store.value);
           if (underlyingFamily) {
             const underlyingSiblings = underlyingFamily.target.children;
   
-            // 3-2. 포개진 항목의 바로 앞에 삽입
+            // 4-2. 포개진 항목의 바로 앞에 삽입
             if (action.value === 'moveup') {
               underlyingSiblings
             }
   
-            // 3-3. 포개진 항목의 바로 뒤에 삽입
+            // 4-3. 포개진 항목의 바로 뒤에 삽입
           } 
         }
       }
@@ -376,6 +396,7 @@ function onMouseup(e: MouseEvent) {
       v-if="element.children.list.length && (element as DirectoryTypes).fold" 
       :list="Object.values(element.children.detail)" 
       :depth="depth + 1"
+      :srchKeyword="srchKeyword"
     />
   </template>
 </template>
@@ -390,6 +411,7 @@ function onMouseup(e: MouseEvent) {
   border: 1px solid #fff;
   font-size: 13px;
   cursor: pointer;
+  user-select: none;
 
   &.selected {
     background-color: #e5f4ff;
@@ -437,7 +459,7 @@ function onMouseup(e: MouseEvent) {
   height: 100%;
   left: 0;
   top: 0;
-  user-select: none;
+  // user-select: none;
 }
 
 .moveup {

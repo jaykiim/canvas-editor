@@ -105,7 +105,7 @@ function onSearchPage() {
   </div>
 
   <div class="lnb-page__body">
-    <ListView v-if="filteredList.length" :list="filteredList" :depth="1" />
+    <ListView v-if="filteredList.length" :list="filteredList" :depth="1" :srchKeyword="srchKeyword" />
 
     <!-- 검색 결과 미존재 시 -->
     <div v-else class="page-item no-result">No results</div>

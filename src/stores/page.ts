@@ -179,9 +179,10 @@ export const usePageStore = defineStore('page', () => {
     newChildren.list.forEach(id_ => changeDecendantIds(id_, newChildren));
   }
 
-  function addElement(element: ElementTypes, parent: ElementStore<ElementTypes>) {
-    parent.list.push(element.id);
-    parent.detail[element.id] = element;
+  function addElement(element: ElementTypes, parent: ElementTypes) {
+    parent.children.list.push(element.id);
+    parent.children.detail[element.id] = element;
+    element.parentId = parent.id;
   }
 
   function deleteElement(id: string, range: ElementStore<ElementTypes>) {
@@ -237,10 +238,10 @@ export const usePageStore = defineStore('page', () => {
     }
     
     // 새 홈페이지명 변경
-    const newHome = store.detail[id];
-    if (newHome.type === 'page') {
-      (newHome as PageElement).isHome = true;
-      newHome.name = 'Home';
+    const newHome = findElementById(id, store);
+    if (newHome?.target.type === 'page') {
+      (newHome.target as PageElement).isHome = true;
+      newHome.target.name = 'Home';
     }
 
     // 순서 변경
