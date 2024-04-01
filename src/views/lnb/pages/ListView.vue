@@ -264,8 +264,8 @@ function onMousemove(e: MouseEvent) {
 
   // 6. 어느 지점에 겹쳤는지 계산하여 가이드 표시 ************************************************************************************************************
         
-        // 자기 자신의 자식에 겹친 경우 제외
-        if (underlyingEl.target.parentId !== draggingEl.id) {
+        // 자기 자신 또는 자신의 자식에 겹친 경우 제외
+        if (underlyingEl.target.parentId !== draggingEl.id && underlyingEl.target.id !== draggingEl.id) {
           if (e.clientY < underlyingTop + threshold && !(underlyingEl.target as PageElement).isHome) {
             action.value = 'moveup';
             listItem.classList.add(action.value);
@@ -358,30 +358,6 @@ function onMouseup(e: MouseEvent) {
     }
 
     console.log('done', store.value);
-
-    // const underlyingFamily = elementStore.findElementById(underlyingEl.parentId, store.value);
-    // console.log('underlying parentid', underlyingEl.parentId);
-    // if (underlyingFamily) {
-    //   const underlyingSiblings = underlyingFamily.target.children;
-    //   const siblingList = underlyingSiblings.list.filter(id => id !== draggingEl.id);
-    //   const underlyingIndex = siblingList.findIndex(id => id === underlyingEl.id);
-      
-    //   // 4-2. 포개진 항목의 바로 앞에 삽입
-    //   if (action.value === 'moveup') {
-    //     siblingList.splice(underlyingIndex, 0, draggingEl.id);
-    //   }
-
-    //   // 4-3. 포개진 항목의 바로 뒤에 삽입
-    //   if (action.value === 'movedown') {
-    //     siblingList.splice(underlyingIndex + 1, 0, draggingEl.id);
-    //   }
-
-    //   // 4-3. dragging 객체 등록
-    //   if (!underlyingSiblings.detail[underlyingEl.id]) {
-    //     underlyingSiblings.detail[underlyingEl.id] = underlyingEl;
-    //   }
-
-    // } 
   }
 
   dragging.value = { element: undefined, div: undefined };
