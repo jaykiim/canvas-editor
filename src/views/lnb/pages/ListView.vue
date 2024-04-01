@@ -202,10 +202,11 @@ const mousedownEvent = ref<MouseEvent>();
 const dragging = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined });
 const underlying = ref<{ element?: DirectoryTypes, div?: HTMLDivElement }>({ element: undefined, div: undefined});
 const action = ref<'moveup' | 'movedown' | 'insert' | ''>('');
+const selected = ref<DirectoryTypes>();
 
 function onMousedown(e: MouseEvent, element: DirectoryTypes) {
   mousedownEvent.value = e;
-
+  selected.value = element;
   if (element.type === 'page') {
     selectedPage.value = element.id;
     if (element.isHome || props.srchKeyword) return; // 검색 중이거나 홈 페이지일 경우 드래그 앤 드롭 방지
@@ -369,7 +370,7 @@ function onMouseup(e: MouseEvent) {
     <div 
       v-if="element.type === 'page' || element.type === 'folder'"
       class="page-item" 
-      :class="{ selected: element.id === selectedPage, dragging: dragging.div }"
+      :class="{ selected: element.id === selected?.id, dragging: dragging.div }"
       :id="element.id"
       :style="{ paddingLeft: 7 + depth * 20 + 'px' }"
       @mousedown.stop="onMousedown($event, element as DirectoryTypes)"
