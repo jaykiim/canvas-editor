@@ -212,7 +212,7 @@ export const usePageStore = defineStore('page', () => {
     changeDecendantIds(newId, parent);
 
     if (element.type === 'page') {
-      selectedPage.value = newId;
+      selectedDirectory.value = newId;
     }
 
     return newVal;
@@ -222,7 +222,7 @@ export const usePageStore = defineStore('page', () => {
   Page
   ==================================================================================================================================================================================== */
 
-  const selectedPage = ref(store.list[0]); // selected from LNB
+  const selectedDirectory = ref(store.list[0]); // selected from LNB
 
   function setPageAsHome(id: string) {
     const newHome = findElementById(id, store);
@@ -260,5 +260,5 @@ export const usePageStore = defineStore('page', () => {
 
   const selectedElement = reactive<ElementTypes[]>([]); // selected from Canvas
 
-  return { store, selectedPage, selectedElement, setPageAsHome, findElementById, findElementByName, addElement, deleteElement, cloneElement };
+  return { store, selectedDirectory, selectedElement, setPageAsHome, findElementById, findElementByName, addElement, deleteElement, cloneElement };
 });
