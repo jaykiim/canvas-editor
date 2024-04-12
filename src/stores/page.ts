@@ -206,14 +206,16 @@ export const usePageStore = defineStore('page', () => {
     const newId = uuidv4();
     const newVal: ElementTypes = JSON.parse(JSON.stringify(element));
 
+    if (element.type === 'page') {
+      (newVal as PageElement).isHome = false;
+      (newVal as PageElement).name = 'page';
+    }
+
     newVal.id = newId;
     parent.list.push(newId);
     parent.detail[newId] = newVal;
     changeDecendantIds(newId, parent);
-
-    if (element.type === 'page') {
-      selectedDirectory.value = newId;
-    }
+    selectedDirectory.value = newId;
 
     return newVal;
   }

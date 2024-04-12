@@ -206,6 +206,7 @@ const action = ref<'moveup' | 'movedown' | 'insert' | ''>('');
 function onMousedown(e: MouseEvent, element: DirectoryTypes) {
   mousedownEvent.value = e;
   selectedDirectory.value = element.id;
+  console.log('element.isHome?', element.isHome);
   if (element.type === 'page') {
     if (element.isHome || props.srchKeyword) return; // 검색 중이거나 홈 페이지일 경우 드래그 앤 드롭 방지
   }
@@ -217,6 +218,7 @@ function onMousedown(e: MouseEvent, element: DirectoryTypes) {
     // 드래그 시 기존 호버 효과 제거
     const pageItem = document.getElementsByClassName('page-item');
     if (pageItem) {
+      console.log('.dragging 추가', pageItem);
       Array.prototype.forEach.call(pageItem, (item: HTMLElement) => {
         item.classList.add('dragging');
       })
@@ -251,9 +253,7 @@ function onMousemove(e: MouseEvent) {
   // 4. 이전에 겹쳤던 항목으로 인해 표시된 가이드선 제거 ************************************************************************************************************
         
         if (underlying.value.div) {
-          underlying.value.div.classList.remove('moveup');
-          underlying.value.div.classList.remove('movedown');
-          underlying.value.div.classList.remove('insert');
+          underlying.value.div.classList.remove('moveup', 'movedown', 'insert');
         }
 
   // 5. 겹쳐진 항목 저장 ************************************************************************************************************
@@ -294,6 +294,7 @@ function onMouseup(e: MouseEvent) {
   
   const pageItem = document.getElementsByClassName('page-item');
   if (pageItem) {
+    console.log('.dragging 제거', pageItem);
     Array.prototype.forEach.call(pageItem, (item: HTMLElement) => {
       item.classList.remove('dragging');
     })
